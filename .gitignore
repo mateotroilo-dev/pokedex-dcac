@@ -1,0 +1,19 @@
+# Dependencias
+node_modules
+
+# Build
+dist
+coverage
+
+# Entorno
+.env*
+.vercel
+
+# Enunciado del challenge
+*.pdf
+
+# Flujo de trabajo con IA: no forma parte del producto
+CLAUDE.md
+.claude/
+plans/
+reviews/
