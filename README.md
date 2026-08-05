@@ -35,7 +35,7 @@ npm run dev
 ```
 src/
   main.jsx                  monta App, sin lógica
-  App.jsx                   providers + GlobalStyle + router, nada más
+  App.jsx                   providers + router, nada más
   app/                      store, persistencia, slice de aplicación, router y providers
   services/baseApi.js       createApi sin endpoints: baseQuery, tagTypes y keepUnusedDataFor
   features/<feature>/       api.js, components/, hooks/, lib/, constants.js
@@ -120,6 +120,12 @@ un defecto que ningún assert de contenido detecta. Acá la card y su skeleton c
 (`shared/ui/Card`), la grilla y su versión en hueco comparten el layout (`shared/ui/Grid`), y las
 dimensiones salen de **una** constante que leen los dos. No son dos valores que haya que acordarse
 de cambiar juntos.
+
+El mismo criterio manda en el arranque. `PersistGate` bloquea el render hasta que redux-persist
+rehidrata, así que su fallback no puede ser `null`: sería una pantalla en blanco de unos
+milisegundos. Es el estado de carga de la página, armado con las mismas piezas, y `GlobalStyle`
+queda montado **afuera** del gate — adentro, mientras rehidrata no existirían el reset de márgenes
+ni el fondo del `body`, y al abrirse el gate todo se correría 8 px.
 
 `ProgressiveImage` tiene un detalle que parece un error de estilo y no lo es: mientras carga, la
 imagen se oculta con `opacity: 0` y queda posicionada sobre el skeleton, nunca con `display: none`.

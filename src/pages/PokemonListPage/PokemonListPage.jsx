@@ -1,9 +1,11 @@
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
+import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
+import { APP_TITLE } from 'src/shared/lib/constants/app.js';
 import { useGetPokemonPageInfiniteQuery } from 'src/features/pokemon-list/api.js';
 import PokemonGrid from 'src/features/pokemon-list/components/PokemonGrid/PokemonGrid.jsx';
 import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGridSkeleton/PokemonGridSkeleton.jsx';
-import { EMPTY_MESSAGE, PAGE_TITLE } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
-import { EmptyMessage, Page, Title } from 'src/pages/PokemonListPage/PokemonListPage.styles.js';
+import { EMPTY_MESSAGE } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
+import { EmptyMessage } from 'src/pages/PokemonListPage/PokemonListPage.styles.js';
 
 const PokemonListPage = () => {
   const { data, isLoading, isError, error, refetch } = useGetPokemonPageInfiniteQuery();
@@ -20,12 +22,7 @@ const PokemonListPage = () => {
     return <PokemonGrid pokemon={pokemon} />;
   };
 
-  return (
-    <Page>
-      <Title>{PAGE_TITLE}</Title>
-      {renderContent()}
-    </Page>
-  );
+  return <PageLayout title={APP_TITLE}>{renderContent()}</PageLayout>;
 };
 
 export default PokemonListPage;
