@@ -5,6 +5,7 @@ import store from 'src/app/store.js';
 import { persistor } from 'src/app/persistor.js';
 import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGridSkeleton/PokemonGridSkeleton.jsx';
 import { APP_TITLE } from 'src/shared/lib/constants/app.js';
+import AppHeader from 'src/shared/ui/AppHeader/AppHeader.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
 import { GlobalStyle } from 'src/shared/styles/GlobalStyle.js';
 import { theme } from 'src/shared/styles/theme.js';
@@ -21,9 +22,12 @@ const Providers = ({ children }) => (
       <PersistGate
         persistor={persistor}
         loading={
-          <PageLayout title={APP_TITLE}>
-            <PokemonGridSkeleton />
-          </PageLayout>
+          <>
+            <AppHeader>{APP_TITLE}</AppHeader>
+            <PageLayout>
+              <PokemonGridSkeleton />
+            </PageLayout>
+          </>
         }
       >
         {children}

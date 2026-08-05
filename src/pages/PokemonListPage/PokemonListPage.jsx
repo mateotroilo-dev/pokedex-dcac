@@ -1,6 +1,5 @@
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
-import { APP_TITLE } from 'src/shared/lib/constants/app.js';
 import { useGetPokemonPageInfiniteQuery } from 'src/features/pokemon-list/api.js';
 import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import PokemonGrid from 'src/features/pokemon-list/components/PokemonGrid/PokemonGrid.jsx';
@@ -44,7 +43,7 @@ const PokemonListPage = () => {
     );
   };
 
-  return <PageLayout title={APP_TITLE}>{renderContent()}</PageLayout>;
+  return <PageLayout>{renderContent()}</PageLayout>;
 };
 
 export default PokemonListPage;
