@@ -12,7 +12,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: './test/environment/jsdomWithNodeAbort.js',
     setupFiles: ['./test/setup.js'],
     include: ['test/**/*.test.{js,jsx}'],
     coverage: {
