@@ -23,7 +23,8 @@
       "prettier --write",
       "eslint --report-unused-disable-directives --max-warnings 0"
     ],
-    "*.{json,md,html,css}": "prettier --write"
+    "*.{json,md,html,css}": "prettier --write",
+    "*.{yml,yaml}": "prettier --write"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",

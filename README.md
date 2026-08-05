@@ -1,13 +1,18 @@
 # pokedex-dcac
 
+[![CI](https://github.com/mateotroilo-dev/pokedex-dcac/actions/workflows/ci.yml/badge.svg)](https://github.com/mateotroilo-dev/pokedex-dcac/actions/workflows/ci.yml)
+
+**Demo:** https://pokedex-dcac.vercel.app/
+
 Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](https://pokeapi.co/).
 
 > **Estado actual:** están el piso de tooling (build, linting, formato, pre-commit), el harness de
-> testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia) y **la primera
-> pantalla**: el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
-> con skeletons mientras carga y un botón de reintentar si la request falla. Falta el scroll
-> infinito, el buscador, los filtros, el detalle, el equipo y la comparación. Este README describe
-> únicamente lo que ya existe en el código; se amplía a medida que cada parte se implementa.
+> testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
+> pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
+> con skeletons mientras carga y un botón de reintentar si la request falla— y la **red de CI y
+> deploy**: workflow de GitHub Actions y demo desplegada en Vercel. Falta el scroll infinito, el
+> buscador, los filtros, el detalle, el equipo y la comparación. Este README describe únicamente lo
+> que ya existe en el código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -133,6 +138,14 @@ Una imagen `loading="lazy"` que no está en el layout no la pide el navegador, a
 dejaría el skeleton animando para siempre. En jsdom esto no se ve —el evento `load` lo dispara el
 test a mano—, y por eso está escrito acá.
 
+### El deploy no vive en el workflow de CI
+
+Vercel despliega por Git integration: mira los pushes a `main`, no el resultado del workflow de
+GitHub Actions. Meter la CLI de Vercel en Actions agregaría secrets y un segundo lugar donde el build
+puede fallar por motivos distintos a los del build real. La garantía de que lo que se despliega pasó
+la CI no la da el deploy en sí: la da la protección de la rama —PR obligatorio y el check `verify` en
+verde para poder mergear a `main`—, así que todo lo que Vercel termina desplegando ya pasó por ahí.
+
 ### `eslint-config-prettier` va último en el array
 
 Su único trabajo es apagar las reglas de ESLint que pelean con Prettier. Flat config resuelve por
@@ -212,8 +225,6 @@ después del reducer, así que el valor viejo le pisaría el nuevo.
 
 ## Mejoras futuras identificadas
 
-- **Integración continua y deploy.** Falta el workflow de GitHub Actions que corra lint y build en
-  cada push, y el deploy de la demo.
 - **Contratos de props.** `react/prop-types` está apagado y no hay reemplazo (ni PropTypes ni JSDoc).
   Es sostenible con componentes chicos; cuando alguno crezca, nada va a avisar si una prop cambia de
   forma. La señal para revisar la decisión es la primera vez que haya que leer el componente entero
