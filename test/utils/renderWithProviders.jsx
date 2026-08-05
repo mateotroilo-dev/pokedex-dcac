@@ -1,18 +1,28 @@
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { makeStore } from 'src/app/store.js';
 import { theme } from 'src/shared/styles/theme.js';
 
 export const renderWithProviders = (
   ui,
-  { preloadedState, store = makeStore(preloadedState), ...options } = {},
+  { preloadedState, store = makeStore(preloadedState), routes, initialEntries, ...options } = {},
 ) => {
+  if (routes && ui) {
+    throw new Error('renderWithProviders: pass either `ui` or `routes`, not both.');
+  }
+
+  // RouterProvider no acepta children: con `routes` reemplaza al MemoryRouter fijo en vez de
+  // anidarse adentro, que es el invariant de react-router que ya documenta el contrato.
   const Wrapper = ({ children }) => (
     <ThemeProvider theme={theme}>
       <Provider store={store}>
-        <MemoryRouter>{children}</MemoryRouter>
+        {routes ? (
+          <RouterProvider router={createMemoryRouter(routes, { initialEntries })} />
+        ) : (
+          <MemoryRouter>{children}</MemoryRouter>
+        )}
       </Provider>
     </ThemeProvider>
   );

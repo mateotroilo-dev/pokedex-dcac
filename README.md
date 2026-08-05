@@ -10,10 +10,11 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
 > con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
-> botón de reintentar si una request falla— y la **red de CI y deploy**: workflow de GitHub Actions y
-> demo desplegada en Vercel. Falta el buscador, los filtros, el detalle, el equipo y la comparación.
-> Este README describe únicamente lo que ya existe en el código; se amplía a medida que cada parte se
-> implementa.
+> botón de reintentar si una request falla—, la **red de CI y deploy**: workflow de GitHub Actions y
+> demo desplegada en Vercel, y el **router con su chrome propio**: layout con header y link a home,
+> una página para rutas inexistentes y otra para errores no manejados. Falta el buscador, los
+> filtros, el detalle, el equipo y la comparación. Este README describe únicamente lo que ya existe
+> en el código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -146,6 +147,19 @@ GitHub Actions. Meter la CLI de Vercel en Actions agregaría secrets y un segund
 puede fallar por motivos distintos a los del build real. La garantía de que lo que se despliega pasó
 la CI no la da el deploy en sí: la da la protección de la rama —PR obligatorio y el check `verify` en
 verde para poder mergear a `main`—, así que todo lo que Vercel termina desplegando ya pasó por ahí.
+
+### El home y la página de error se cargan eager; el resto, diferido
+
+De las tres rutas que existen hoy, dos se bajan en el bundle inicial y una es `lazy`. No es
+inconsistencia: cada una tiene un motivo propio para quedar de un lado o del otro.
+
+`PokemonListPage` es eager porque es la ruta de entrada: diferirla solo agrega un round-trip después
+del `PersistGate`, con el chrome ya pintado y nada más que hacer mientras se espera. `ErrorPage` es
+eager **a propósito**, aunque no sea la ruta de entrada: es el `errorElement` de la raíz, así que
+corre en el peor momento posible —algo de la app ya falló—, y un chunk que todavía no bajó no puede
+ser quien reporte que algo salió mal. La página de 404 sí es `lazy`: no es la ruta de entrada, no
+corre en un momento crítico, y deja el patrón puesto para las rutas de producto que vienen (detalle,
+equipo, comparación), que van a diferirse de la misma forma.
 
 ### `eslint-config-prettier` va último en el array
 
