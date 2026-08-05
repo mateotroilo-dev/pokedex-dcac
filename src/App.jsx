@@ -1,3 +1,11 @@
-export default function App() {
-  return <h1>Pokedex DCAC</h1>;
-}
+import { RouterProvider } from 'react-router-dom';
+import Providers from 'src/app/providers.jsx';
+import { router } from 'src/app/router.jsx';
+
+const App = () => (
+  <Providers>
+    <RouterProvider router={router} />
+  </Providers>
+);
+
+export default App;
