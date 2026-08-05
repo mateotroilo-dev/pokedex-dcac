@@ -150,4 +150,30 @@ describe('getPokemonPage', () => {
       ]),
     ).toEqual([expect.objectContaining({ endpointName: 'getPokemonPage' })]);
   });
+
+  it('only re-requests the first page on refetch, not every page already cached', async () => {
+    server.use(indexHandler(), detailHandler());
+    const store = makeStore();
+
+    await fetchFirstPage(store);
+    await fetchNextPage(store);
+
+    let detailRequests = 0;
+    server.use(
+      http.get(DETAIL_URL, ({ params }) => {
+        detailRequests += 1;
+        return HttpResponse.json({
+          ...pokemonDetailResponse,
+          id: Number(params.id),
+          name: `pokemon-${params.id}`,
+        });
+      }),
+    );
+
+    const subscription = fetchFirstPage(store);
+    await subscription;
+    await subscription.refetch();
+
+    expect(detailRequests).toBe(PAGE_SIZE);
+  });
 });

@@ -27,6 +27,10 @@ export const pokemonListApi = baseApi.injectEndpoints({
         // filtro, no hay ningun total que recalcular.
         getNextPageParam: (lastPage, allPages, lastPageParam) =>
           lastPage.length < PAGE_SIZE ? undefined : lastPageParam + PAGE_SIZE,
+        // Default true en RTK 2.12: un refetch() re-pide todas las paginas cacheadas en secuencia,
+        // 20 detalles cada una contra una API publica sin rate limit documentado. El unico refetch()
+        // que dispara la UI es el de la primera carga fallida, sin paginas cacheadas todavia.
+        refetchCachedPages: false,
       },
       queryFn: async ({ pageParam }, { dispatch }, extraOptions, baseQuery) => {
         const indexQuery = dispatch(pokemonListApi.endpoints.getPokemonIndex.initiate());
