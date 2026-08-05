@@ -12,3 +12,11 @@ export const MAX_NATIONAL_DEX_ID = 1025;
 export const INDEX_REQUEST_LIMIT = 100000;
 
 export const POKEMON_INDEX_TAG_ID = 'INDEX';
+
+// Las comparte PokemonCard con PokemonCardSkeleton: si las dos no miden igual, la grilla salta
+// cuando llegan los datos. El sprite de PokeAPI es de 96 px, asi que a ese tamaño no se interpola.
+export const POKEMON_CARD_SPRITE_SIZE = '96px';
+export const POKEMON_CARD_MIN_HEIGHT = '13rem';
+
+// Ancho minimo de columna de la grilla: lo comparten la grilla de cards y la de skeletons.
+export const POKEMON_CARD_MIN_WIDTH = '10rem';
