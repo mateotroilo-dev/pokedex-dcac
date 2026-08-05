@@ -9,10 +9,11 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > **Estado actual:** están el piso de tooling (build, linting, formato, pre-commit), el harness de
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
-> con skeletons mientras carga y un botón de reintentar si la request falla— y la **red de CI y
-> deploy**: workflow de GitHub Actions y demo desplegada en Vercel. Falta el scroll infinito, el
-> buscador, los filtros, el detalle, el equipo y la comparación. Este README describe únicamente lo
-> que ya existe en el código; se amplía a medida que cada parte se implementa.
+> con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
+> botón de reintentar si una request falla— y la **red de CI y deploy**: workflow de GitHub Actions y
+> demo desplegada en Vercel. Falta el buscador, los filtros, el detalle, el equipo y la comparación.
+> Este README describe únicamente lo que ya existe en el código; se amplía a medida que cada parte se
+> implementa.
 
 ## Instalación y ejecución
 
@@ -222,6 +223,12 @@ lado: la app arranca desde cache y la invalidación deja de tener efecto, en sil
 **Lo que nunca se persiste**: el momento en que la sesión se rehidrató. Es un dato de _esta_ sesión;
 restaurarlo desde disco es una contradicción, y además el reconciliador de `redux-persist` corre
 después del reducer, así que el valor viejo le pisaría el nuevo.
+
+**Volver a entrar no re-pide las páginas que ya se trajeron.** `pages` y `pageParams` se persisten
+juntos en la misma entrada, así que al rehidratar, `fetchNextPage` retoma desde el último offset sin
+refetchear nada, y las páginas que ya estaban en cache se pintan todas de una. La contracara: la
+posición de scroll no se restaura, la sesión rehidratada arranca siempre arriba, con el cache ya
+pintado debajo.
 
 ## Mejoras futuras identificadas
 
