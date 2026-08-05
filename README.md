@@ -10,11 +10,14 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
 > con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
-> botón de reintentar si una request falla—, la **red de CI y deploy**: workflow de GitHub Actions y
-> demo desplegada en Vercel, y el **router con su chrome propio**: layout con header y link a home,
-> una página para rutas inexistentes y otra para errores no manejados. Falta el buscador, los
-> filtros, el detalle, el equipo y la comparación. Este README describe únicamente lo que ya existe
-> en el código; se amplía a medida que cada parte se implementa.
+> botón de reintentar si una request falla—, **el detalle** —`/pokemon/:id` abre desde cualquier card
+> del listado sin volver a pedir nada, y por URL directa muestra artwork, número, nombre y tipos, con
+> su propio skeleton y una distinción entre "no existe" (sin reintento) y un fallo cualquiera (con
+> reintento)—, la **red de CI y deploy**: workflow de GitHub Actions y demo desplegada en Vercel, y el
+> **router con su chrome propio**: layout con header y link a home, una página para rutas inexistentes
+> y otra para errores no manejados. Falta el buscador, los filtros, el cuerpo del detalle (sprites
+> alternativos, stats, habilidades), el equipo y la comparación. Este README describe únicamente lo
+> que ya existe en el código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -150,16 +153,16 @@ verde para poder mergear a `main`—, así que todo lo que Vercel termina desple
 
 ### El home y la página de error se cargan eager; el resto, diferido
 
-De las tres rutas que existen hoy, dos se bajan en el bundle inicial y una es `lazy`. No es
+De las cuatro rutas que existen hoy, dos se bajan en el bundle inicial y dos son `lazy`. No es
 inconsistencia: cada una tiene un motivo propio para quedar de un lado o del otro.
 
 `PokemonListPage` es eager porque es la ruta de entrada: diferirla solo agrega un round-trip después
 del `PersistGate`, con el chrome ya pintado y nada más que hacer mientras se espera. `ErrorPage` es
 eager **a propósito**, aunque no sea la ruta de entrada: es el `errorElement` de la raíz, así que
 corre en el peor momento posible —algo de la app ya falló—, y un chunk que todavía no bajó no puede
-ser quien reporte que algo salió mal. La página de 404 sí es `lazy`: no es la ruta de entrada, no
-corre en un momento crítico, y deja el patrón puesto para las rutas de producto que vienen (detalle,
-equipo, comparación), que van a diferirse de la misma forma.
+ser quien reporte que algo salió mal. La página de 404 y `PokemonDetailPage` sí son `lazy`: ninguna
+es la ruta de entrada, ninguna corre en un momento crítico, y el patrón que dejó puesto la 404 es el
+que usan el detalle y las rutas de producto que faltan (equipo, comparación).
 
 ### `eslint-config-prettier` va último en el array
 
@@ -212,6 +215,15 @@ dibuja —id, nombre, alto, peso, tipos, stats, habilidades y cuatro sprites—,
 sirve a la card, al detalle, a la comparación y al equipo: la request ya se pagó entera una vez, tirar
 stats para volver a pedir la misma URL después sería la llamada redundante que el challenge pide
 evitar.
+
+**El listado siembra el cache del detalle.** `getPokemonById` vive en `services/pokemonApi.js` porque
+lo consumen dos features: `pokemon-list` lo escribe y `pokemon-detail` lo lee. Cada vez que
+`getPokemonPage` transforma un detalle, lo escribe también en la entrada de `getPokemonById` con
+`upsertQueryData`; abrir un pokémon desde la grilla lee de ahí y no pega a la red. El costo es
+duplicación: un pokémon visto en el listado y abierto en el detalle queda en dos entradas de
+`localStorage` en vez de una, así que la dex entera recorrida pesa ~2 MB en vez de ~1 MB. La salida,
+si algún día molesta, es normalizar el cache del listado por id — deliberadamente fuera de esta
+slice.
 
 **`keepUnusedDataFor` en 24 h.** Un pokémon no cambia. El default de RTK Query son 60 segundos, que
 para datos inmutables significa volver a pedir lo mismo apenas el usuario cierra un detalle y lo abre

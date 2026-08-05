@@ -21,12 +21,11 @@ describe('PokemonCard', () => {
   });
 
   it('shows the front sprite, not the artwork', () => {
-    renderWithProviders(<PokemonCard pokemon={bulbasaur} />);
+    // El sprite es alt="": el nombre ya lo aporta el heading, adentro del mismo link. Sin nombre
+    // accesible, el rol pasa a "presentation" y no se puede buscar por getByRole('img').
+    const { container } = renderWithProviders(<PokemonCard pokemon={bulbasaur} />);
 
-    expect(screen.getByRole('img', { name: 'bulbasaur' })).toHaveAttribute(
-      'src',
-      bulbasaur.sprites.front,
-    );
+    expect(container.querySelector('img')).toHaveAttribute('src', bulbasaur.sprites.front);
   });
 
   it('renders one badge per type', () => {
@@ -34,5 +33,11 @@ describe('PokemonCard', () => {
 
     expect(screen.getByText('grass')).toBeInTheDocument();
     expect(screen.getByText('poison')).toBeInTheDocument();
+  });
+
+  it('links the whole card to the pokemon detail page', () => {
+    renderWithProviders(<PokemonCard pokemon={bulbasaur} />);
+
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/pokemon/1');
   });
 });

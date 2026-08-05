@@ -2,3 +2,7 @@
 // mide ~900px contra un viewport de ~800px: con un margen del orden de la pantalla el sentinel entra
 // en viewport en el primer paint y la pagina 2 se pide sola antes de que el usuario scrollee.
 export const SENTINEL_ROOT_MARGIN = '200px';
+
+// role="presentation" ya no alcanza para encontrarlo en tests: un sprite decorativo (alt="") tiene
+// el mismo rol implicito, y una pagina llena de cards deja varios en pantalla a la vez.
+export const SENTINEL_TEST_ID = 'scroll-sentinel';

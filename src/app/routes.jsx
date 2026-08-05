@@ -12,6 +12,14 @@ export const routes = [
     children: [
       { index: true, element: <PokemonListPage /> },
       {
+        path: ROUTES.POKEMON_DETAIL,
+        lazy: async () => {
+          const { default: PokemonDetailPage } =
+            await import('src/pages/PokemonDetailPage/PokemonDetailPage.jsx');
+          return { Component: PokemonDetailPage };
+        },
+      },
+      {
         path: ROUTES.NOT_FOUND,
         lazy: async () => {
           const { default: NotFoundPage } = await import('src/pages/NotFoundPage/NotFoundPage.jsx');

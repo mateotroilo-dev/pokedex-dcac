@@ -8,7 +8,7 @@ import {
 
 export const baseApi = createApi({
   reducerPath: BASE_API_REDUCER_PATH,
-  baseQuery: fetchBaseQuery({ baseUrl: POKEAPI_BASE_URL }),
+  baseQuery: fetchBaseQuery({ baseUrl: POKEAPI_BASE_URL, responseHandler: 'content-type' }),
   tagTypes: [POKEMON_TAG_TYPE],
   keepUnusedDataFor: KEEP_UNUSED_DATA_FOR_SECONDS,
   endpoints: () => ({}),

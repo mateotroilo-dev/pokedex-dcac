@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react';
-import PokemonTypeBadge from 'src/features/pokemon-list/components/PokemonTypeBadge/PokemonTypeBadge.jsx';
+import PokemonTypeBadge from 'src/shared/ui/PokemonTypeBadge/PokemonTypeBadge.jsx';
 import { POKEMON_TYPE_COLORS } from 'src/shared/styles/pokemonTypes.js';
 import { theme } from 'src/shared/styles/theme.js';
 import { renderWithProviders } from 'test/utils/renderWithProviders.jsx';
