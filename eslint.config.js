@@ -26,6 +26,12 @@ export default [
     languageOptions: { globals: globals.node },
   },
 
+  // Los globals de Vitest, que en los tests no se importan: `globals: true` en vite.config.js.
+  {
+    files: ['test/**/*.{js,jsx}'],
+    languageOptions: { globals: globals.vitest },
+  },
+
   js.configs.recommended,
   react.configs.flat.recommended,
   react.configs.flat['jsx-runtime'],
@@ -41,7 +47,7 @@ export default [
   },
 
   {
-    files: ['src/**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}', 'test/**/*.{js,jsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -49,7 +55,7 @@ export default [
           patterns: [
             {
               group: ['./*', './**', '../*', '../**'],
-              message: 'Usá imports absolutos desde `src/`',
+              message: 'Usá imports absolutos desde `src/` o `test/`',
             },
           ],
         },
