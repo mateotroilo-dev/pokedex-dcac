@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom';
 import Card from 'src/shared/ui/Card/Card.jsx';
+import PokemonTypeBadge from 'src/shared/ui/PokemonTypeBadge/PokemonTypeBadge.jsx';
 import ProgressiveImage from 'src/shared/ui/ProgressiveImage/ProgressiveImage.jsx';
 import { formatPokemonNumber } from 'src/shared/lib/formatPokemonNumber.js';
-import PokemonTypeBadge from 'src/features/pokemon-list/components/PokemonTypeBadge/PokemonTypeBadge.jsx';
+import { toPokemonDetailPath } from 'src/shared/lib/toPokemonDetailPath.js';
 import {
   POKEMON_CARD_MIN_HEIGHT,
   POKEMON_CARD_SPRITE_SIZE,
@@ -13,10 +15,12 @@ import {
 } from 'src/features/pokemon-list/components/PokemonCard/PokemonCard.styles.js';
 
 const PokemonCard = ({ pokemon }) => (
-  <Card minHeight={POKEMON_CARD_MIN_HEIGHT}>
+  <Card as={Link} to={toPokemonDetailPath(pokemon.id)} minHeight={POKEMON_CARD_MIN_HEIGHT}>
     <ProgressiveImage
+      // El nombre del pokemon ya lo aporta el heading de abajo: con alt, el link entero se
+      // llamaria "bulbasaur #0001 bulbasaur grass poison" para el lector de pantalla.
       src={pokemon.sprites.front}
-      alt={pokemon.name}
+      alt=""
       width={POKEMON_CARD_SPRITE_SIZE}
       height={POKEMON_CARD_SPRITE_SIZE}
     />

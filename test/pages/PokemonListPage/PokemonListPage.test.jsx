@@ -7,6 +7,7 @@ import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { DEX_COMPLETE_MESSAGE } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.constants.js';
 import { EMPTY_MESSAGE } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
+import { SENTINEL_TEST_ID } from 'src/shared/ui/InfiniteScrollSentinel/InfiniteScrollSentinel.constants.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
 import { createPokemonIndexResponse } from 'test/msw/fixtures/createPokemonIndexResponse.js';
 import { mockIntersectionObserver } from 'test/utils/mockIntersectionObserver.js';
@@ -44,7 +45,7 @@ const failingIndexHandler = () =>
 const findFirstCardName = () => screen.findByRole('heading', { name: FIRST_POKEMON_NAME });
 const findSecondPageFirstCardName = () =>
   screen.findByRole('heading', { name: SECOND_PAGE_FIRST_NAME });
-const getSentinel = () => screen.getByRole('presentation', { hidden: true });
+const getSentinel = () => screen.getByTestId(SENTINEL_TEST_ID);
 
 // Traer la pagina entera son 21 requests por MSW: con los archivos de test corriendo en paralelo no
 // entra en los 5 s del default.
@@ -64,7 +65,8 @@ describe('PokemonListPage', () => {
 
       await findFirstCardName();
 
-      expect(screen.getAllByRole('article')).toHaveLength(PAGE_SIZE);
+      // Cargada, cada card es un link: el rol article solo aplica mientras es skeleton.
+      expect(screen.getAllByRole('link')).toHaveLength(PAGE_SIZE);
       expect(screen.getByText('#0001')).toBeInTheDocument();
     },
     FULL_PAGE_TIMEOUT_MS,
@@ -123,12 +125,12 @@ describe('PokemonListPage', () => {
 
       renderWithProviders(<PokemonListPage />);
       await findFirstCardName();
-      expect(screen.getAllByRole('article')).toHaveLength(PAGE_SIZE);
+      expect(screen.getAllByRole('link')).toHaveLength(PAGE_SIZE);
 
       mockIntersectionObserver.intersect(getSentinel());
 
       await findSecondPageFirstCardName();
-      expect(screen.getAllByRole('article')).toHaveLength(SPECIES_IN_INDEX);
+      expect(screen.getAllByRole('link')).toHaveLength(SPECIES_IN_INDEX);
     },
     FULL_PAGE_TIMEOUT_MS,
   );
@@ -160,12 +162,12 @@ describe('PokemonListPage', () => {
 
       const retry = await screen.findByRole('button', { name: RETRY_LABEL });
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(screen.getAllByRole('article')).toHaveLength(PAGE_SIZE);
+      expect(screen.getAllByRole('link')).toHaveLength(PAGE_SIZE);
 
       await user.click(retry);
 
       await findSecondPageFirstCardName();
-      expect(screen.getAllByRole('article')).toHaveLength(SPECIES_IN_INDEX);
+      expect(screen.getAllByRole('link')).toHaveLength(SPECIES_IN_INDEX);
     },
     FULL_PAGE_TIMEOUT_MS,
   );
@@ -182,7 +184,7 @@ describe('PokemonListPage', () => {
       await findSecondPageFirstCardName();
 
       expect(await screen.findByText(DEX_COMPLETE_MESSAGE)).toBeInTheDocument();
-      expect(screen.queryByRole('presentation', { hidden: true })).not.toBeInTheDocument();
+      expect(screen.queryByTestId(SENTINEL_TEST_ID)).not.toBeInTheDocument();
     },
     FULL_PAGE_TIMEOUT_MS,
   );

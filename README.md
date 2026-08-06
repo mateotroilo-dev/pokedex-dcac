@@ -10,11 +10,16 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
 > con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
-> botón de reintentar si una request falla—, la **red de CI y deploy**: workflow de GitHub Actions y
-> demo desplegada en Vercel, y el **router con su chrome propio**: layout con header y link a home,
-> una página para rutas inexistentes y otra para errores no manejados. Falta el buscador, los
-> filtros, el detalle, el equipo y la comparación. Este README describe únicamente lo que ya existe
-> en el código; se amplía a medida que cada parte se implementa.
+> botón de reintentar si una request falla—, **el detalle** —`/pokemon/:id` abre desde cualquier card
+> del listado sin volver a pedir nada, y por URL directa muestra una galería con los sprites que la
+> entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde una tira de
+> miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la suma total,
+> altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe" (sin
+> reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de GitHub
+> Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header y link
+> a home, una página para rutas inexistentes y otra para errores no manejados. Falta el buscador, los
+> filtros, el equipo y la comparación. Este README describe únicamente lo que ya existe en el
+> código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -63,7 +68,8 @@ Tres reglas la sostienen:
   la carpeta (`Badge/Badge.jsx`, no `index.jsx`). Los imports son explícitos y no hay barrels.
 - **Lo que baja a `shared/ui` baja sin dominio.** `Badge` recibe un color y un texto; el que sabe
   traducir `'fire'` a un color es `PokemonTypeBadge`, del lado de la feature. Es la razón de que
-  `Card`, `Grid` y `ProgressiveImage` no mencionen Pokémon en ninguna línea.
+  `Card`, `Grid`, `ProgressiveImage`, `ImageGallery` y `ProgressBar` no mencionen Pokémon en ninguna
+  línea.
 
 ## Decisiones técnicas
 
@@ -150,16 +156,16 @@ verde para poder mergear a `main`—, así que todo lo que Vercel termina desple
 
 ### El home y la página de error se cargan eager; el resto, diferido
 
-De las tres rutas que existen hoy, dos se bajan en el bundle inicial y una es `lazy`. No es
+De las cuatro rutas que existen hoy, dos se bajan en el bundle inicial y dos son `lazy`. No es
 inconsistencia: cada una tiene un motivo propio para quedar de un lado o del otro.
 
 `PokemonListPage` es eager porque es la ruta de entrada: diferirla solo agrega un round-trip después
 del `PersistGate`, con el chrome ya pintado y nada más que hacer mientras se espera. `ErrorPage` es
 eager **a propósito**, aunque no sea la ruta de entrada: es el `errorElement` de la raíz, así que
 corre en el peor momento posible —algo de la app ya falló—, y un chunk que todavía no bajó no puede
-ser quien reporte que algo salió mal. La página de 404 sí es `lazy`: no es la ruta de entrada, no
-corre en un momento crítico, y deja el patrón puesto para las rutas de producto que vienen (detalle,
-equipo, comparación), que van a diferirse de la misma forma.
+ser quien reporte que algo salió mal. La página de 404 y `PokemonDetailPage` sí son `lazy`: ninguna
+es la ruta de entrada, ninguna corre en un momento crítico, y el patrón que dejó puesto la 404 es el
+que usan el detalle y las rutas de producto que faltan (equipo, comparación).
 
 ### `eslint-config-prettier` va último en el array
 
@@ -213,6 +219,15 @@ sirve a la card, al detalle, a la comparación y al equipo: la request ya se pag
 stats para volver a pedir la misma URL después sería la llamada redundante que el challenge pide
 evitar.
 
+**El listado siembra el cache del detalle.** `getPokemonById` vive en `services/pokemonApi.js` porque
+lo consumen dos features: `pokemon-list` lo escribe y `pokemon-detail` lo lee. Cada vez que
+`getPokemonPage` transforma un detalle, lo escribe también en la entrada de `getPokemonById` con
+`upsertQueryData`; abrir un pokémon desde la grilla lee de ahí y no pega a la red. El costo es
+duplicación: un pokémon visto en el listado y abierto en el detalle queda en dos entradas de
+`localStorage` en vez de una, así que la dex entera recorrida pesa ~2 MB en vez de ~1 MB. La salida,
+si algún día molesta, es normalizar el cache del listado por id — deliberadamente fuera de esta
+slice.
+
 **`keepUnusedDataFor` en 24 h.** Un pokémon no cambia. El default de RTK Query son 60 segundos, que
 para datos inmutables significa volver a pedir lo mismo apenas el usuario cierra un detalle y lo abre
 de nuevo.
@@ -243,6 +258,15 @@ juntos en la misma entrada, así que al rehidratar, `fetchNextPage` retoma desde
 refetchear nada, y las páginas que ya estaban en cache se pintan todas de una. La contracara: la
 posición de scroll no se restaura, la sesión rehidratada arranca siempre arriba, con el cache ya
 pintado debajo.
+
+### Las barras de stats escalan contra 255, no contra el máximo del pokémon
+
+`PokemonStats` le pasa a cada `PokemonStatBar` el mismo `max`: `MAX_BASE_STAT = 255`, el tope real de
+una base stat en los juegos, no el mayor valor entre las seis stats de ese pokémon en particular.
+Escalar contra el propio máximo haría que cualquier pokémon se vea con una barra llena así tenga 45
+de HP — comparable solo contra sí mismo, no contra el resto de la dex. Contra 255 las barras son
+comparables entre pokémon: el 45 de HP de Bulbasaur se ve corto de verdad, que es la información real.
+El costo aceptado es que casi ninguna barra llega a la mitad del ancho.
 
 ## Mejoras futuras identificadas
 

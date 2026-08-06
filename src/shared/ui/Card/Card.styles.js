@@ -10,4 +10,15 @@ export const Surface = styled.article`
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.radii.lg};
   background-color: ${({ theme }) => theme.colors.surface};
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.accent};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accent};
+    outline-offset: 2px;
+  }
 `;

@@ -1,4 +1,7 @@
 import { baseApi } from 'src/services/baseApi.js';
+// No solo el tipo: importar pokemonApi es lo que inyecta su endpoint. Sin esta importacion
+// 'getPokemonById' no existe todavia y el upsert de abajo no apunta a ninguna entrada de cache.
+import { pokemonApi } from 'src/services/pokemonApi.js';
 import { POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
 import { limitConcurrency } from 'src/shared/lib/limitConcurrency.js';
 import { parseApiError } from 'src/shared/lib/parseApiError.js';
@@ -44,7 +47,12 @@ export const pokemonListApi = baseApi.injectEndpoints({
             const { data, error } = await baseQuery(`pokemon/${entry.id}`);
             if (error) throw error;
 
-            return toPokemon(data);
+            const pokemon = toPokemon(data);
+            // Siembra el cache de getPokemonById: abrir el detalle desde la grilla lee de aca en
+            // vez de volver a pedir una URL que la app ya bajo.
+            dispatch(pokemonApi.util.upsertQueryData('getPokemonById', pokemon.id, pokemon));
+
+            return pokemon;
           };
 
           return {

@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from 'test/msw/server.js';
 import { makeStore } from 'src/app/store.js';
 import { pokemonListApi } from 'src/features/pokemon-list/api.js';
+import { pokemonApi } from 'src/services/pokemonApi.js';
 import { POKEAPI_BASE_URL, POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
 import { PAGE_SIZE, POKEMON_INDEX_TAG_ID } from 'src/features/pokemon-list/constants.js';
 import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
@@ -138,17 +139,23 @@ describe('getPokemonPage', () => {
     expect(error).toEqual({ status: 500, message: 'Server Error' });
   });
 
-  it('provides a tag per pokemon brought, so invalidating one reaches the page', async () => {
+  it('provides a tag per pokemon brought, so invalidating one reaches the page and its seeded getPokemonById entry', async () => {
     server.use(indexHandler(), detailHandler());
     const store = makeStore();
 
     await fetchFirstPage(store);
 
-    expect(
-      pokemonListApi.util.selectInvalidatedBy(store.getState(), [
-        { type: POKEMON_TAG_TYPE, id: 7 },
+    const invalidated = pokemonListApi.util.selectInvalidatedBy(store.getState(), [
+      { type: POKEMON_TAG_TYPE, id: 7 },
+    ]);
+
+    expect(invalidated).toHaveLength(2);
+    expect(invalidated).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ endpointName: 'getPokemonPage' }),
+        expect.objectContaining({ endpointName: 'getPokemonById' }),
       ]),
-    ).toEqual([expect.objectContaining({ endpointName: 'getPokemonPage' })]);
+    );
   });
 
   it('only re-requests the first page on refetch, not every page already cached', async () => {
@@ -175,5 +182,29 @@ describe('getPokemonPage', () => {
     await subscription.refetch();
 
     expect(detailRequests).toBe(PAGE_SIZE);
+  });
+
+  it('seeds getPokemonById, so reading a pokemon already brought by the page does not request it again', async () => {
+    server.use(indexHandler(), detailHandler());
+    const store = makeStore();
+
+    await fetchFirstPage(store);
+
+    let detailRequests = 0;
+    server.use(
+      http.get(DETAIL_URL, ({ params }) => {
+        detailRequests += 1;
+        return HttpResponse.json({
+          ...pokemonDetailResponse,
+          id: Number(params.id),
+          name: `pokemon-${params.id}`,
+        });
+      }),
+    );
+
+    const { data } = await store.dispatch(pokemonApi.endpoints.getPokemonById.initiate(1));
+
+    expect(data).toEqual(expect.objectContaining({ id: 1, name: 'pokemon-1' }));
+    expect(detailRequests).toBe(0);
   });
 });
