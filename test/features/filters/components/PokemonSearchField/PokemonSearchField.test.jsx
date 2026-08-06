@@ -7,7 +7,12 @@ import {
   CLEAR_SEARCH_LABEL,
   SEARCH_LABEL,
 } from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.constants.js';
-import { SEARCH_PARAM } from 'src/features/filters/constants.js';
+import {
+  GENERATION_PARAM,
+  SEARCH_DEBOUNCE_MS,
+  SEARCH_PARAM,
+  TYPE_PARAM,
+} from 'src/features/filters/constants.js';
 import { renderWithProviders } from 'test/utils/renderWithProviders.jsx';
 
 const ExternalNavButton = ({ to }) => {
@@ -28,6 +33,51 @@ const SearchParamSpy = ({ onChange }) => {
   }, [searchParams]);
 
   return null;
+};
+
+// El string entero de la URL, para probar que el buscador no pisa una entrada que escribio otra
+// cosa (un select) ni la que ya estaba puesta al montar: los dos casos que reporto el bug.
+const FullSearchSpy = ({ onChange }) => {
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    onChange(searchParams.toString());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  return null;
+};
+
+// Simula lo que hacen PokemonTypeSelect / PokemonGenerationSelect: suma un param a los que ya
+// estan puestos y siempre empuja una entrada nueva.
+const ExternalPushButton = ({ param, value, label }) => {
+  const [, setSearchParams] = useSearchParams();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        setSearchParams(
+          (previousParams) => {
+            const nextParams = new URLSearchParams(previousParams);
+            nextParams.set(param, value);
+            return nextParams;
+          },
+          { replace: false },
+        )
+      }
+    >
+      {label}
+    </button>
+  );
+};
+
+const GoBackButton = () => {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => navigate(-1)}>
+      go back
+    </button>
+  );
 };
 
 describe('PokemonSearchField', () => {
@@ -88,5 +138,109 @@ describe('PokemonSearchField', () => {
     await user.click(screen.getByRole('button', { name: 'navigate externally' }));
 
     expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue('charmander');
+  });
+
+  it('pushes a new entry for the first term written, instead of replacing the entry it mounted on', () => {
+    vi.useFakeTimers();
+    const searchChanges = [];
+
+    renderWithProviders(
+      <>
+        <PokemonSearchField />
+        <FullSearchSpy onChange={(value) => searchChanges.push(value)} />
+        <GoBackButton />
+      </>,
+    );
+
+    const input = screen.getByLabelText(SEARCH_LABEL);
+    fireEvent.change(input, { target: { value: 'pika' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    expect(searchChanges.at(-1)).toBe('q=pika');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('');
+  });
+
+  it('collapses consecutive debounce firings of the same typing session into one entry', () => {
+    vi.useFakeTimers();
+    const searchChanges = [];
+
+    renderWithProviders(
+      <>
+        <PokemonSearchField />
+        <FullSearchSpy onChange={(value) => searchChanges.push(value)} />
+        <GoBackButton />
+      </>,
+    );
+
+    const input = screen.getByLabelText(SEARCH_LABEL);
+    fireEvent.change(input, { target: { value: 'p' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    fireEvent.change(input, { target: { value: 'pi' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    fireEvent.change(input, { target: { value: 'pika' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    expect(searchChanges.at(-1)).toBe('q=pika');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('');
+  });
+
+  it('pushes its own entry instead of replacing one written by something else, like a select', () => {
+    vi.useFakeTimers();
+    const searchChanges = [];
+
+    renderWithProviders(
+      <>
+        <ExternalPushButton param={TYPE_PARAM} value="grass" label="pick type" />
+        <PokemonSearchField />
+        <FullSearchSpy onChange={(value) => searchChanges.push(value)} />
+        <GoBackButton />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick type' }));
+    expect(searchChanges.at(-1)).toBe('type=grass');
+
+    const input = screen.getByLabelText(SEARCH_LABEL);
+    fireEvent.change(input, { target: { value: 'pika' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    expect(searchChanges.at(-1)).toBe('type=grass&q=pika');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('type=grass');
+  });
+
+  it('undoes a select, a term and another select one entry at a time with the back button', () => {
+    vi.useFakeTimers();
+    const searchChanges = [];
+
+    renderWithProviders(
+      <>
+        <ExternalPushButton param={TYPE_PARAM} value="grass" label="pick type" />
+        <PokemonSearchField />
+        <ExternalPushButton param={GENERATION_PARAM} value="1" label="pick generation" />
+        <FullSearchSpy onChange={(value) => searchChanges.push(value)} />
+        <GoBackButton />
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick type' }));
+
+    const input = screen.getByLabelText(SEARCH_LABEL);
+    fireEvent.change(input, { target: { value: 'pika' } });
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+
+    fireEvent.click(screen.getByRole('button', { name: 'pick generation' }));
+    expect(searchChanges.at(-1)).toBe('type=grass&q=pika&gen=1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('type=grass&q=pika');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('type=grass');
+
+    fireEvent.click(screen.getByRole('button', { name: 'go back' }));
+    expect(searchChanges.at(-1)).toBe('');
   });
 });

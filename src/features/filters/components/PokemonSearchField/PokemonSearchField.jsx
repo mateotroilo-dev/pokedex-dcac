@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useDebounce } from 'src/shared/hooks/useDebounce.js';
 import { SEARCH_DEBOUNCE_MS } from 'src/features/filters/constants.js';
 import { usePokemonFilters } from 'src/features/filters/hooks/usePokemonFilters.js';
@@ -17,32 +18,57 @@ import {
 } from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.styles.js';
 
 const PokemonSearchField = () => {
-  const { searchTerm, setSearchTerm } = usePokemonFilters();
-  const [inputValue, setInputValue] = useState(searchTerm);
+  const { term, setTerm } = usePokemonFilters();
+  const [inputValue, setInputValue] = useState(term);
   const debouncedValue = useDebounce(inputValue, SEARCH_DEBOUNCE_MS);
-  // Lo ultimo que este campo escribio en la URL, para distinguir un cambio de searchTerm que es el
-  // eco del propio debounce de abajo (no hay que hacer nada) de uno que vino de afuera -boton atras,
-  // un link con ?q=- (ahi si hay que reflejarlo en el input). Sin esta marca, el eco del propio
-  // efecto pisa lo que el usuario ya tipeo despues de que el debounce disparo.
-  const lastWrittenTerm = useRef(searchTerm);
+  const location = useLocation();
+  // Lo ultimo que este campo escribio en la URL, para distinguir un cambio de term que es el eco
+  // del propio debounce de abajo (no hay que hacer nada) de uno que vino de afuera -boton atras, un
+  // link con ?q=- (ahi si hay que reflejarlo en el input). Sin esta marca, el eco del propio efecto
+  // pisa lo que el usuario ya tipeo despues de que el debounce disparo.
+  const lastWrittenTerm = useRef(term);
+  // Si la entrada de historial actual la escribio este mismo campo, el proximo tecleo la reemplaza
+  // -sigue siendo la misma sesion de busqueda-. Si la escribio otra cosa -un select, el boton atras,
+  // la carga inicial-, el proximo tecleo tiene que abrir su propia entrada: si no, pisaria la de
+  // ese select (o la entrada original antes de tipear nada) en vez de sumarse encima.
+  const isOwnEntry = useRef(false);
+  // Distingue, dentro del efecto de abajo, un cambio de historial que generamos nosotros mismos
+  // (location.key nuevo por nuestro propio write) de uno externo.
+  const justWrote = useRef(false);
+
+  useEffect(() => {
+    if (justWrote.current) {
+      justWrote.current = false;
+    } else {
+      isOwnEntry.current = false;
+    }
+  }, [location.key]);
 
   useEffect(() => {
     lastWrittenTerm.current = debouncedValue;
-    setSearchTerm(debouncedValue);
+    const wrote = setTerm(debouncedValue, { replace: isOwnEntry.current });
+    if (wrote) {
+      justWrote.current = true;
+      isOwnEntry.current = true;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedValue]);
 
   useEffect(() => {
-    if (searchTerm === lastWrittenTerm.current) return;
+    if (term === lastWrittenTerm.current) return;
 
-    lastWrittenTerm.current = searchTerm;
-    setInputValue(searchTerm);
-  }, [searchTerm]);
+    lastWrittenTerm.current = term;
+    setInputValue(term);
+  }, [term]);
 
   const handleClear = () => {
     lastWrittenTerm.current = '';
     setInputValue('');
-    setSearchTerm('');
+    const wrote = setTerm('', { replace: isOwnEntry.current });
+    if (wrote) {
+      justWrote.current = true;
+      isOwnEntry.current = true;
+    }
   };
 
   return (

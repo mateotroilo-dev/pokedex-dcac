@@ -7,7 +7,7 @@ import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { DEX_COMPLETE_MESSAGE } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.constants.js';
 import { CLEAR_SEARCH_LABEL } from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.constants.js';
-import { SEARCH_PARAM } from 'src/features/filters/constants.js';
+import { GENERATION_PARAM, SEARCH_PARAM, TYPE_PARAM } from 'src/features/filters/constants.js';
 import {
   EMPTY_DEX_MESSAGE,
   NO_SEARCH_RESULTS_MESSAGE,
@@ -16,12 +16,20 @@ import { SENTINEL_TEST_ID } from 'src/shared/ui/InfiniteScrollSentinel/InfiniteS
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
 import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
 import { createPokemonIndexResponse } from 'test/msw/fixtures/createPokemonIndexResponse.js';
+import { typeIndexResponse } from 'test/msw/fixtures/typeIndexResponse.js';
+import { generationIndexResponse } from 'test/msw/fixtures/generationIndexResponse.js';
+import { typeResponse } from 'test/msw/fixtures/typeResponse.js';
+import { generationResponse } from 'test/msw/fixtures/generationResponse.js';
 import { mockIntersectionObserver } from 'test/utils/mockIntersectionObserver.js';
 import { server } from 'test/msw/server.js';
 import { renderWithProviders } from 'test/utils/renderWithProviders.jsx';
 
 const INDEX_URL = `${POKEAPI_BASE_URL}pokemon`;
 const DETAIL_URL = `${POKEAPI_BASE_URL}pokemon/:id`;
+const TYPE_URL = `${POKEAPI_BASE_URL}type`;
+const GENERATION_URL = `${POKEAPI_BASE_URL}generation`;
+const TYPE_DETAIL_URL = `${POKEAPI_BASE_URL}type/:name`;
+const GENERATION_DETAIL_URL = `${POKEAPI_BASE_URL}generation/:id`;
 
 const FIRST_POKEMON_NAME = 'pokemon-1';
 const SERVER_ERROR_MESSAGE = 'Server Error';
@@ -70,6 +78,26 @@ const namedDetailHandler = () =>
     }),
   );
 
+// PokemonFilterBar monta los dos selects ademas del buscador: cualquier caso que renderice la
+// pagina pide /type y /generation, y con onUnhandledRequest: 'error' eso falla el test sin ellos.
+const typesHandler = () => http.get(TYPE_URL, () => HttpResponse.json(typeIndexResponse));
+const generationsHandler = () =>
+  http.get(GENERATION_URL, () => HttpResponse.json(generationIndexResponse));
+
+// typeResponse trae los ids [1, 2, 10001]: la forma alterna prueba que la interseccion contra el
+// indice la descarta, igual que en la Tarea 3. Un tipo que no existe sale 404 -> null, sin error.
+const typeDetailHandler = () =>
+  http.get(TYPE_DETAIL_URL, ({ params }) => {
+    if (params.name === 'banana') {
+      return HttpResponse.json({ message: 'Not Found' }, { status: 404 });
+    }
+
+    return HttpResponse.json(typeResponse);
+  });
+
+const generationDetailHandler = () =>
+  http.get(GENERATION_DETAIL_URL, () => HttpResponse.json(generationResponse));
+
 const findFirstCardName = () => screen.findByRole('heading', { name: FIRST_POKEMON_NAME });
 const findSecondPageFirstCardName = () =>
   screen.findByRole('heading', { name: SECOND_PAGE_FIRST_NAME });
@@ -83,7 +111,7 @@ describe('PokemonListPage', () => {
   it(
     'holds the grid with skeletons and swaps them for the cards',
     async () => {
-      server.use(indexHandler(), detailHandler());
+      server.use(indexHandler(), detailHandler(), typesHandler(), generationsHandler());
 
       renderWithProviders(<PokemonListPage />);
 
@@ -114,6 +142,8 @@ describe('PokemonListPage', () => {
             : HttpResponse.json(createPokemonIndexResponse(PAGE_SIZE));
         }),
         detailHandler(),
+        typesHandler(),
+        generationsHandler(),
       );
 
       renderWithProviders(<PokemonListPage />);
@@ -131,7 +161,7 @@ describe('PokemonListPage', () => {
   );
 
   it('surfaces the message that parseApiError normalized', async () => {
-    server.use(failingIndexHandler());
+    server.use(failingIndexHandler(), typesHandler(), generationsHandler());
 
     renderWithProviders(<PokemonListPage />);
 
@@ -139,7 +169,7 @@ describe('PokemonListPage', () => {
   });
 
   it('says so when the dex comes back empty', async () => {
-    server.use(indexHandler(0));
+    server.use(indexHandler(0), typesHandler(), generationsHandler());
 
     renderWithProviders(<PokemonListPage />);
 
@@ -149,7 +179,12 @@ describe('PokemonListPage', () => {
   it(
     'brings the next page into view when the sentinel enters the viewport, adding to the cards already there',
     async () => {
-      server.use(indexHandler(SPECIES_IN_INDEX), detailHandler());
+      server.use(
+        indexHandler(SPECIES_IN_INDEX),
+        detailHandler(),
+        typesHandler(),
+        generationsHandler(),
+      );
 
       renderWithProviders(<PokemonListPage />);
       await findFirstCardName();
@@ -181,6 +216,8 @@ describe('PokemonListPage', () => {
 
           return HttpResponse.json({ ...pokemonDetailResponse, id, name: `pokemon-${id}` });
         }),
+        typesHandler(),
+        generationsHandler(),
       );
 
       renderWithProviders(<PokemonListPage />);
@@ -203,7 +240,12 @@ describe('PokemonListPage', () => {
   it(
     'shows the closing message once the last page is in, and stops the sentinel from firing',
     async () => {
-      server.use(indexHandler(SPECIES_IN_INDEX), detailHandler());
+      server.use(
+        indexHandler(SPECIES_IN_INDEX),
+        detailHandler(),
+        typesHandler(),
+        generationsHandler(),
+      );
 
       renderWithProviders(<PokemonListPage />);
       await findFirstCardName();
@@ -218,7 +260,7 @@ describe('PokemonListPage', () => {
   );
 
   it('paints only the cards that match the search term already in the URL', async () => {
-    server.use(searchIndexHandler(), namedDetailHandler());
+    server.use(searchIndexHandler(), namedDetailHandler(), typesHandler(), generationsHandler());
 
     renderWithProviders(<PokemonListPage />, {
       initialEntries: [`/?${SEARCH_PARAM}=venusaur`],
@@ -230,7 +272,7 @@ describe('PokemonListPage', () => {
   });
 
   it('shows the no-results empty state and no footer for a term with no matches', async () => {
-    server.use(searchIndexHandler());
+    server.use(searchIndexHandler(), typesHandler(), generationsHandler());
 
     renderWithProviders(<PokemonListPage />, {
       initialEntries: [`/?${SEARCH_PARAM}=zzz`],
@@ -244,7 +286,7 @@ describe('PokemonListPage', () => {
 
   it('shows the full listing again after clearing the search term', async () => {
     const user = userEvent.setup();
-    server.use(searchIndexHandler(), namedDetailHandler());
+    server.use(searchIndexHandler(), namedDetailHandler(), typesHandler(), generationsHandler());
 
     renderWithProviders(<PokemonListPage />, {
       initialEntries: [`/?${SEARCH_PARAM}=venusaur`],
@@ -254,6 +296,79 @@ describe('PokemonListPage', () => {
     expect(screen.getAllByRole('link')).toHaveLength(1);
 
     await user.click(screen.getByRole('button', { name: CLEAR_SEARCH_LABEL }));
+
+    await screen.findByRole('heading', { name: 'bulbasaur' });
+    expect(screen.getAllByRole('link')).toHaveLength(5);
+  });
+
+  it('paints only the cards that match the type already in the URL', async () => {
+    server.use(
+      searchIndexHandler(),
+      namedDetailHandler(),
+      typesHandler(),
+      generationsHandler(),
+      typeDetailHandler(),
+      generationDetailHandler(),
+    );
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${TYPE_PARAM}=grass`],
+    });
+
+    expect(await screen.findByRole('heading', { name: 'bulbasaur' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'ivysaur' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
+  });
+
+  it('paints only the cards that match the generation already in the URL', async () => {
+    server.use(
+      searchIndexHandler(),
+      namedDetailHandler(),
+      typesHandler(),
+      generationsHandler(),
+      typeDetailHandler(),
+      generationDetailHandler(),
+    );
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${GENERATION_PARAM}=1`],
+    });
+
+    expect(await screen.findByRole('heading', { name: 'venusaur' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+  });
+
+  it('combines a type and a search term in the URL', async () => {
+    server.use(
+      searchIndexHandler(),
+      namedDetailHandler(),
+      typesHandler(),
+      generationsHandler(),
+      typeDetailHandler(),
+      generationDetailHandler(),
+    );
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${TYPE_PARAM}=grass&${SEARCH_PARAM}=ivy`],
+    });
+
+    expect(await screen.findByRole('heading', { name: 'ivysaur' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+  });
+
+  it('shows the full listing for a type that does not exist', async () => {
+    server.use(
+      searchIndexHandler(),
+      namedDetailHandler(),
+      typesHandler(),
+      generationsHandler(),
+      typeDetailHandler(),
+      generationDetailHandler(),
+    );
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${TYPE_PARAM}=banana`],
+    });
 
     await screen.findByRole('heading', { name: 'bulbasaur' });
     expect(screen.getAllByRole('link')).toHaveLength(5);
