@@ -9,17 +9,18 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > **Estado actual:** están el piso de tooling (build, linting, formato, pre-commit), el harness de
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
-> con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
-> botón de reintentar si una request falla—, **el detalle** —`/pokemon/:id` abre desde cualquier card
-> del listado sin volver a pedir nada, y por URL directa muestra una galería con los sprites que la
-> entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde una tira de
-> miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la suma total,
-> altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe" (sin
-> reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de GitHub
-> Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header y link
-> a home, una página para rutas inexistentes y otra para errores no manejados. Falta el buscador, los
-> filtros, el equipo y la comparación. Este README describe únicamente lo que ya existe en el
-> código; se amplía a medida que cada parte se implementa.
+> con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo, un
+> botón de reintentar si una request falla y un buscador por nombre o número que filtra la dex
+> completa sin perder la posición en el historial—, **el detalle** —`/pokemon/:id` abre desde
+> cualquier card del listado sin volver a pedir nada, y por URL directa muestra una galería con los
+> sprites que la entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde
+> una tira de miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la
+> suma total, altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe"
+> (sin reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de
+> GitHub Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header
+> y link a home, una página para rutas inexistentes y otra para errores no manejados. Falta el resto
+> de los filtros (tipo, generación, stats), el equipo y la comparación. Este README describe
+> únicamente lo que ya existe en el código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -241,7 +242,11 @@ suscripciones y las queries en vuelo adentro. Separarlas además permite darle a
 **El reducer de la API no se persiste tal cual.** Guarda `subscriptions` —referencias de runtime— y
 queries `pending` que, restauradas, rehidratan trabadas para siempre: la pantalla queda cargando y
 nada vuelve a resolver esa promesa. Un transform propio deja pasar únicamente las queries
-`fulfilled`, y poda la tabla de tags a esas mismas entradas.
+`fulfilled` que un predicado marca como persistibles, y poda la tabla de tags a esas mismas
+entradas. Hoy ese predicado excluye además `getPokemonPage` con un término de búsqueda: cada uno
+deja hasta 20 pokémon nuevos en `localStorage`, y la cuota ya está justa solo con la dex sin filtrar.
+El listado sin término y `getPokemonById` —que la propia grilla siembra— se siguen guardando
+enteros.
 
 **La invalidación por tags corre contra las dos.** PokeAPI es de solo lectura: no hay mutations, así
 que nada invalida nada solo. El disparador es `baseApi.util.invalidateTags` desde la app, y funciona
@@ -258,6 +263,22 @@ juntos en la misma entrada, así que al rehidratar, `fetchNextPage` retoma desde
 refetchear nada, y las páginas que ya estaban en cache se pintan todas de una. La contracara: la
 posición de scroll no se restaura, la sesión rehidratada arranca siempre arriba, con el cache ya
 pintado debajo.
+
+### El buscador filtra el índice que ya está en cache, no pide un endpoint nuevo
+
+PokeAPI no tiene un endpoint de búsqueda: no existe un `GET /pokemon?name=pika`. Lo único que hace
+falta para encontrar "pikachu" o el `#25` es el nombre y el id de cada especie, y eso es exactamente
+lo que `getPokemonIndex` ya trajo entero en una sola request (ver Cache y persistencia, arriba).
+`getPokemonPage` pasa a recibir el término escrito, filtra las 1025 entradas del índice en memoria
+—substring de nombre o id exacto, según si el término es numérico— y baja los detalles solo de las
+que matchean, con el mismo paginado y el mismo tope de requests en vuelo que ya tenía. No hay
+request nueva contra PokeAPI: la única diferencia con el listado sin filtro es qué ventana del
+índice se recorta antes de pedir los detalles.
+
+Cada término queda como su propia entrada de cache, independiente del listado sin filtro y entre sí.
+La contracara es que los resultados de una búsqueda no se persisten en `localStorage`: guardar hasta
+20 pokémon por término escrito llenaría la cuota de ~5 MB mucho antes que guardar solo la dex sin
+filtrar, así que `pickFulfilledQueries` los deja afuera a propósito (ver Cache y persistencia).
 
 ### Las barras de stats escalan contra 255, no contra el máximo del pokémon
 

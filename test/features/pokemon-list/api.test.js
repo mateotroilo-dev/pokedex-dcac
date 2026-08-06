@@ -207,4 +207,37 @@ describe('getPokemonPage', () => {
     expect(data).toEqual(expect.objectContaining({ id: 1, name: 'pokemon-1' }));
     expect(detailRequests).toBe(0);
   });
+
+  it('brings only the pokemon that match the search term', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+    );
+    const store = makeStore();
+
+    const { data } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate('deoxys'),
+    );
+
+    expect(data.pages[0]).toHaveLength(1);
+    expect(data.pages[0][0]).toEqual(expect.objectContaining({ id: 386 }));
+  });
+
+  it('keeps the search and the plain page as separate cache entries', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+    );
+    const store = makeStore();
+
+    await store.dispatch(pokemonListApi.endpoints.getPokemonPage.initiate());
+    await store.dispatch(pokemonListApi.endpoints.getPokemonPage.initiate('venusaur'));
+
+    const plainPage = pokemonListApi.endpoints.getPokemonPage.select(undefined)(store.getState());
+    const searchPage = pokemonListApi.endpoints.getPokemonPage.select('venusaur')(store.getState());
+
+    expect(plainPage.data.pages[0].map((pokemon) => pokemon.id)).toEqual([1, 2, 3, 386, 1025]);
+    expect(searchPage.data.pages[0]).toHaveLength(1);
+    expect(searchPage.data.pages[0][0]).toEqual(expect.objectContaining({ id: 3 }));
+  });
 });

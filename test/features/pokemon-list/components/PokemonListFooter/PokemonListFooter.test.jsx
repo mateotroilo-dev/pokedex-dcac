@@ -4,6 +4,7 @@ import PokemonListFooter from 'src/features/pokemon-list/components/PokemonListF
 import {
   DEX_COMPLETE_MESSAGE,
   LOAD_MORE_ERROR_MESSAGE,
+  NO_MORE_RESULTS_MESSAGE,
 } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.constants.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { mockIntersectionObserver } from 'test/utils/mockIntersectionObserver.js';
@@ -56,6 +57,20 @@ describe('PokemonListFooter', () => {
     );
 
     expect(screen.getByText(DEX_COMPLETE_MESSAGE)).toBeInTheDocument();
+  });
+
+  it('shows the no-more-results message instead, when the closing page came from a search', () => {
+    renderWithProviders(
+      <PokemonListFooter
+        {...IDLE_WITH_NEXT_PAGE}
+        hasNextPage={false}
+        hasSearchTerm
+        onLoadMore={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(NO_MORE_RESULTS_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByText(DEX_COMPLETE_MESSAGE)).not.toBeInTheDocument();
   });
 
   it('does not ask for another page while one is already in flight', () => {

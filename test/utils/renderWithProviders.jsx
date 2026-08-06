@@ -21,7 +21,7 @@ export const renderWithProviders = (
         {routes ? (
           <RouterProvider router={createMemoryRouter(routes, { initialEntries })} />
         ) : (
-          <MemoryRouter>{children}</MemoryRouter>
+          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
         )}
       </Provider>
     </ThemeProvider>

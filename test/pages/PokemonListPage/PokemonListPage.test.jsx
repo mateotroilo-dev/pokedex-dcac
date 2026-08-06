@@ -6,9 +6,15 @@ import { POKEAPI_BASE_URL } from 'src/shared/lib/constants/api.js';
 import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { DEX_COMPLETE_MESSAGE } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.constants.js';
-import { EMPTY_MESSAGE } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
+import { CLEAR_SEARCH_LABEL } from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.constants.js';
+import { SEARCH_PARAM } from 'src/features/filters/constants.js';
+import {
+  EMPTY_DEX_MESSAGE,
+  NO_SEARCH_RESULTS_MESSAGE,
+} from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
 import { SENTINEL_TEST_ID } from 'src/shared/ui/InfiniteScrollSentinel/InfiniteScrollSentinel.constants.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
+import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
 import { createPokemonIndexResponse } from 'test/msw/fixtures/createPokemonIndexResponse.js';
 import { mockIntersectionObserver } from 'test/utils/mockIntersectionObserver.js';
 import { server } from 'test/msw/server.js';
@@ -41,6 +47,28 @@ const detailHandler = () =>
 
 const failingIndexHandler = () =>
   http.get(INDEX_URL, () => HttpResponse.json({ message: SERVER_ERROR_MESSAGE }, { status: 500 }));
+
+// El fixture real, no la factory: sus nombres no llevan digitos, que es lo que necesita la Tarea 1
+// para distinguir el criterio de id del de nombre (ver Tarea 2 en el plan). El detalle tiene que
+// devolver ese mismo nombre por id, o la card muestra "pokemon-N" y el test de matcheo no prueba
+// nada.
+const searchIndexHandler = () => http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse));
+
+const detailNameById = Object.fromEntries(
+  pokemonIndexResponse.results.map((result) => [
+    Number(result.url.split('/').filter(Boolean).at(-1)),
+    result.name,
+  ]),
+);
+
+const namedDetailHandler = () =>
+  http.get(DETAIL_URL, ({ params }) =>
+    HttpResponse.json({
+      ...pokemonDetailResponse,
+      id: Number(params.id),
+      name: detailNameById[Number(params.id)],
+    }),
+  );
 
 const findFirstCardName = () => screen.findByRole('heading', { name: FIRST_POKEMON_NAME });
 const findSecondPageFirstCardName = () =>
@@ -115,7 +143,7 @@ describe('PokemonListPage', () => {
 
     renderWithProviders(<PokemonListPage />);
 
-    expect(await screen.findByText(EMPTY_MESSAGE)).toBeInTheDocument();
+    expect(await screen.findByText(EMPTY_DEX_MESSAGE)).toBeInTheDocument();
   });
 
   it(
@@ -188,4 +216,46 @@ describe('PokemonListPage', () => {
     },
     FULL_PAGE_TIMEOUT_MS,
   );
+
+  it('paints only the cards that match the search term already in the URL', async () => {
+    server.use(searchIndexHandler(), namedDetailHandler());
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${SEARCH_PARAM}=venusaur`],
+    });
+
+    expect(await screen.findByRole('heading', { name: 'venusaur' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: 'bulbasaur' })).not.toBeInTheDocument();
+  });
+
+  it('shows the no-results empty state and no footer for a term with no matches', async () => {
+    server.use(searchIndexHandler());
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${SEARCH_PARAM}=zzz`],
+    });
+
+    expect(await screen.findByText(NO_SEARCH_RESULTS_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByTestId(SENTINEL_TEST_ID)).not.toBeInTheDocument();
+    expect(screen.queryByText(DEX_COMPLETE_MESSAGE)).not.toBeInTheDocument();
+  });
+
+  it('shows the full listing again after clearing the search term', async () => {
+    const user = userEvent.setup();
+    server.use(searchIndexHandler(), namedDetailHandler());
+
+    renderWithProviders(<PokemonListPage />, {
+      initialEntries: [`/?${SEARCH_PARAM}=venusaur`],
+    });
+
+    await screen.findByRole('heading', { name: 'venusaur' });
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+
+    await user.click(screen.getByRole('button', { name: CLEAR_SEARCH_LABEL }));
+
+    await screen.findByRole('heading', { name: 'bulbasaur' });
+    expect(screen.getAllByRole('link')).toHaveLength(5);
+  });
 });

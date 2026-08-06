@@ -13,6 +13,7 @@ import {
   POKEMON_INDEX_TAG_ID,
 } from 'src/features/pokemon-list/constants.js';
 import { toPokemonIndex } from 'src/features/pokemon-list/lib/toPokemonIndex.js';
+import { filterPokemonIndex } from 'src/features/pokemon-list/lib/filterPokemonIndex.js';
 
 export const pokemonListApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -35,14 +36,15 @@ export const pokemonListApi = baseApi.injectEndpoints({
         // que dispara la UI es el de la primera carga fallida, sin paginas cacheadas todavia.
         refetchCachedPages: false,
       },
-      queryFn: async ({ pageParam }, { dispatch }, extraOptions, baseQuery) => {
+      queryFn: async ({ queryArg: term, pageParam }, { dispatch }, extraOptions, baseQuery) => {
         const indexQuery = dispatch(pokemonListApi.endpoints.getPokemonIndex.initiate());
 
         try {
           const { data: index, error: indexError } = await indexQuery;
           if (indexError) return { error: indexError };
 
-          const pageEntries = index.slice(pageParam, pageParam + PAGE_SIZE);
+          const matchingIndex = filterPokemonIndex(index, term);
+          const pageEntries = matchingIndex.slice(pageParam, pageParam + PAGE_SIZE);
           const fetchDetail = (entry) => async () => {
             const { data, error } = await baseQuery(`pokemon/${entry.id}`);
             if (error) throw error;
