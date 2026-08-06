@@ -1,3 +1,6 @@
+import PokemonSearchField from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.jsx';
+import { usePokemonFilters } from 'src/features/filters/hooks/usePokemonFilters.js';
+import EmptyState from 'src/shared/ui/EmptyState/EmptyState.jsx';
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
 import { useGetPokemonPageInfiniteQuery } from 'src/features/pokemon-list/api.js';
@@ -5,10 +8,16 @@ import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import PokemonGrid from 'src/features/pokemon-list/components/PokemonGrid/PokemonGrid.jsx';
 import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGridSkeleton/PokemonGridSkeleton.jsx';
 import PokemonListFooter from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.jsx';
-import { EMPTY_MESSAGE } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
-import { EmptyMessage } from 'src/pages/PokemonListPage/PokemonListPage.styles.js';
+import {
+  EMPTY_DEX_MESSAGE,
+  NO_SEARCH_RESULTS_MESSAGE,
+} from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
 
 const PokemonListPage = () => {
+  const { searchTerm } = usePokemonFilters();
+  const hasSearchTerm = Boolean(searchTerm);
+  // Sin busqueda el arg tiene que seguir siendo undefined, no '': es la clave de cache que ya esta
+  // persistida en el disco de cualquiera que uso la app antes de esta slice.
   const {
     data,
     isLoading,
@@ -19,7 +28,7 @@ const PokemonListPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isFetchNextPageError,
-  } = useGetPokemonPageInfiniteQuery();
+  } = useGetPokemonPageInfiniteQuery(searchTerm || undefined);
 
   const pokemon = (data?.pages ?? []).flat();
 
@@ -28,7 +37,9 @@ const PokemonListPage = () => {
     // Sin ninguna pagina traida todavia no hay nada que conservar: el error ocupa la pagina entera.
     // Con paginas ya en pantalla, un fallo de la siguiente lo cuenta el pie, no esto.
     if (isError && !data) return <ErrorState message={error.message} onRetry={refetch} />;
-    if (pokemon.length === 0) return <EmptyMessage>{EMPTY_MESSAGE}</EmptyMessage>;
+    if (pokemon.length === 0) {
+      return <EmptyState message={hasSearchTerm ? NO_SEARCH_RESULTS_MESSAGE : EMPTY_DEX_MESSAGE} />;
+    }
 
     return (
       <>
@@ -38,12 +49,18 @@ const PokemonListPage = () => {
           isFetchNextPageError={isFetchNextPageError}
           isFetchingNextPage={isFetchingNextPage}
           onLoadMore={fetchNextPage}
+          hasSearchTerm={hasSearchTerm}
         />
       </>
     );
   };
 
-  return <PageLayout>{renderContent()}</PageLayout>;
+  return (
+    <PageLayout>
+      <PokemonSearchField />
+      {renderContent()}
+    </PageLayout>
+  );
 };
 
 export default PokemonListPage;

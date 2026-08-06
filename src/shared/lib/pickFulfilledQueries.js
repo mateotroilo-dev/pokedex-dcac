@@ -2,11 +2,6 @@ import { createTransform } from 'redux-persist';
 import { QueryStatus } from '@reduxjs/toolkit/query';
 import { PROVIDED_STATE_KEY, QUERIES_STATE_KEY } from 'src/shared/lib/constants/persist.js';
 
-const fulfilledQueries = (queries) =>
-  Object.fromEntries(
-    Object.entries(queries).filter(([, query]) => query.status === QueryStatus.fulfilled),
-  );
-
 const prunedTagIds = (tagIds, keptCacheKeys) =>
   Object.fromEntries(
     Object.entries(tagIds)
@@ -31,14 +26,26 @@ const prunedProvided = (provided, keptCacheKeys) => ({
 // `provided` se conserva podado en vez de descartarse: `invalidateTags` resuelve a que entrada de
 // cache le pega leyendo de ahi, asi que sin esto la invalidacion no tiene efecto justo en la sesion
 // que arranca desde el cache rehidratado, y no falla en ningun otro lado.
-export const pickFulfilledQueries = createTransform((inboundState, key, fullState) => {
-  if (key === QUERIES_STATE_KEY) return fulfilledQueries(inboundState);
+//
+// `isPersistable` es donde entra la regla con dominio: esta funcion solo sabe de "fulfilled" (una
+// query pending o rejected rehidrata stuck para siempre, eso no es negociable) y de que el podado
+// de `provided` tiene que correr contra el mismo conjunto de queries que sobrevive.
+export const pickFulfilledQueries = (isPersistable) =>
+  createTransform((inboundState, key, fullState) => {
+    const persistableQueries = (queries) =>
+      Object.fromEntries(
+        Object.entries(queries).filter(
+          ([, query]) => query.status === QueryStatus.fulfilled && isPersistable(query),
+        ),
+      );
 
-  if (key === PROVIDED_STATE_KEY) {
-    const keptCacheKeys = new Set(Object.keys(fulfilledQueries(fullState[QUERIES_STATE_KEY])));
+    if (key === QUERIES_STATE_KEY) return persistableQueries(inboundState);
 
-    return prunedProvided(inboundState, keptCacheKeys);
-  }
+    if (key === PROVIDED_STATE_KEY) {
+      const keptCacheKeys = new Set(Object.keys(persistableQueries(fullState[QUERIES_STATE_KEY])));
 
-  return inboundState;
-});
+      return prunedProvided(inboundState, keptCacheKeys);
+    }
+
+    return inboundState;
+  });

@@ -20,12 +20,20 @@ export const rootPersistConfig = {
   blacklist: [BASE_API_REDUCER_PATH, UI_REDUCER_PATH],
 };
 
+// `getPokemonPage` con termino no se persiste: cada busqueda deja hasta 20 entradas mas en
+// localStorage con un TTL de 24 h (la cuota que la slice 4 ya dejo cerca del techo), y el listado
+// sin termino se sigue guardando entero. Mira `endpointName` y no solo si `originalArgs` esta
+// definido: "el arg no es undefined" a secas tambien descartaria `getPokemonById`, que la propia
+// grilla siembra y que si tiene que sobrevivir para abrir el detalle sin red.
+const isPersistableQuery = (query) =>
+  !(query.endpointName === 'getPokemonPage' && query.originalArgs !== undefined);
+
 export const apiPersistConfig = {
   key: API_PERSIST_KEY,
   storage,
   whitelist: PERSISTED_API_KEYS,
   throttle: PERSIST_THROTTLE_MS,
-  transforms: [pickFulfilledQueries],
+  transforms: [pickFulfilledQueries(isPersistableQuery)],
 };
 
 // Opt-out y no whitelist: la preferencia que sume una feature se persiste sola. `hydratedAt` es lo

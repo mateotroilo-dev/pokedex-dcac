@@ -3,6 +3,7 @@ import InfiniteScrollSentinel from 'src/shared/ui/InfiniteScrollSentinel/Infinit
 import {
   DEX_COMPLETE_MESSAGE,
   LOAD_MORE_ERROR_MESSAGE,
+  NO_MORE_RESULTS_MESSAGE,
 } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.constants.js';
 import { ClosingMessage } from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.styles.js';
 
@@ -11,13 +12,18 @@ const PokemonListFooter = ({
   isFetchNextPageError,
   isFetchingNextPage,
   onLoadMore,
+  hasSearchTerm,
 }) => {
   if (isFetchNextPageError) {
     return <ErrorState message={LOAD_MORE_ERROR_MESSAGE} onRetry={onLoadMore} />;
   }
 
   if (!hasNextPage) {
-    return <ClosingMessage>{DEX_COMPLETE_MESSAGE}</ClosingMessage>;
+    return (
+      <ClosingMessage>
+        {hasSearchTerm ? NO_MORE_RESULTS_MESSAGE : DEX_COMPLETE_MESSAGE}
+      </ClosingMessage>
+    );
   }
 
   // Apagar el sentinel mientras la pagina esta en vuelo no es para evitar el dispatch de mas (de eso
