@@ -1,11 +1,8 @@
-import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useDataFreshness } from 'src/features/connection/hooks/useDataFreshness.js';
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
 import HomeLink from 'src/shared/ui/HomeLink/HomeLink.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
 import { useGetPokemonByIdQuery } from 'src/services/pokemonApi.js';
-import { POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
 import { POKEMON_ID_PARAM } from 'src/shared/lib/constants/routes.js';
 import PokemonDetailSkeleton from 'src/features/pokemon-detail/components/PokemonDetailSkeleton/PokemonDetailSkeleton.jsx';
 import PokemonFacts from 'src/features/pokemon-detail/components/PokemonFacts/PokemonFacts.jsx';
@@ -19,12 +16,9 @@ const PokemonDetailPage = () => {
   const id = Number(useParams()[POKEMON_ID_PARAM]);
   const isValidId = Number.isInteger(id) && id > 0;
 
-  const { data, isLoading, isFetching, isError, error, refetch, fulfilledTimeStamp } =
-    useGetPokemonByIdQuery(id, { skip: !isValidId });
-
-  const tags = useMemo(() => [{ type: POKEMON_TAG_TYPE, id }], [id]);
-
-  useDataFreshness({ fulfilledTimeStamp, isFetching, tags });
+  const { data, isLoading, isError, error, refetch } = useGetPokemonByIdQuery(id, {
+    skip: !isValidId,
+  });
 
   const renderContent = () => {
     // Con skip, la query queda isUninitialized: ni loading ni error. Por eso el id invalido entra

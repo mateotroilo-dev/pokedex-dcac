@@ -34,16 +34,4 @@ describe('AppHeader', () => {
     expect(screen.getByRole('heading', { name: 'Pokedex DCAC' })).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
-
-  it('renders the status slot when it receives one', () => {
-    renderWithProviders(<AppHeader status={<span>En línea</span>}>Pokedex DCAC</AppHeader>);
-
-    expect(screen.getByText('En línea')).toBeInTheDocument();
-  });
-
-  it('still renders the heading with no status slot', () => {
-    renderWithProviders(<AppHeader>Pokedex DCAC</AppHeader>);
-
-    expect(screen.getByRole('heading', { name: 'Pokedex DCAC' })).toBeInTheDocument();
-  });
 });

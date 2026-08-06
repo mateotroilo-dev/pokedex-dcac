@@ -7,12 +7,6 @@ export const Nav = styled.nav`
   gap: ${({ theme }) => theme.spacing.md};
 `;
 
-export const StatusGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
-`;
-
 export const HeaderNavLink = styled(NavLink)`
   color: inherit;
   text-decoration: none;

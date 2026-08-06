@@ -27,11 +27,7 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > las 1025 entradas del índice para elegir dos pokémon, que al enviarse quedan en la URL
 > (`?a=&b=`) y se muestran enfrentados con sprite, número, nombre y tipos, un radar en SVG propio
 > con las seis stats de cada uno, y una tabla accesible con esas mismas stats, el total y el
-> ganador de cada fila marcado con texto además de color—, y **conexión y frescura de datos** — el
-> header muestra siempre si hay conexión, y en el listado y el detalle además la edad del dato en
-> pantalla ("recién", "hace unos minutos", "hace N h"…), distinguiendo si viene de la red de esta
-> sesión o de lo que ya estaba en `localStorage`, con un botón que refresca lo que está en pantalla
-> y queda deshabilitado sin conexión—. Falta el filtro por stats. Este README
+> ganador de cada fila marcado con texto además de color—. Falta el filtro por stats. Este README
 > describe únicamente lo que ya existe en el código; se amplía a medida que cada parte se
 > implementa.
 
@@ -367,35 +363,6 @@ que el SVG no repite los números adentro —esa alternativa textual ya la da la
 barras de stats siguen escalando contra 255** por el mismo motivo de arriba: el radar usa el mismo
 `max` que `PokemonStatBar`, así que la forma de dos pokémon comparados también es comparable contra
 el resto de la dex, no solo entre ellos dos.
-
-### La invalidación se dispara a mano, no al reconectar
-
-PokeAPI es de solo lectura: no hay ninguna mutation que invalide nada por sí sola, así que el
-disparador tiene que ser la app. Automatizarlo al reconectar dispararía el refetch justo cuando la
-red recién vuelve y sin que nadie lo haya pedido — el peor momento para gastar red sin avisar. Un
-botón deja esa decisión, y su costo, donde el usuario la puede ver: `DataFreshnessIndicator`
-invalida con `baseApi.util.invalidateTags`, pero acotado a los tags de la query que la propia
-página reportó, no al tipo `Pokemon` entero. El tipo entero se lleva puestos de un click los
-`getPokemonById` que sembró la grilla, el índice y lo que alimenta `/team` y `/compare` — justo el
-cache en disco que sostiene el offline de la app.
-
-### La frescura se mide contra `hydratedAt`, no contra un TTL
-
-Un dato es "fresco" si su `fulfilledTimeStamp` es posterior al momento en que `uiSlice` rehidrató
-el store en esta sesión (`hydratedAt`); si es anterior, salió de `localStorage` y la pantalla está
-mostrando disco, no red. Un TTL inventado —"cacheado si tiene más de N minutos"— no distingue esos
-dos casos: un dato de hace 30 segundos que vino de disco en el arranque es tan "viejo" como uno que
-nunca se refrescó, y son historias distintas para el usuario. Con `hydratedAt` en `null` (primera
-visita, sin nada en disco) todo es fresco por definición.
-
-### La frescura viaja por contexto, no por el store
-
-`AppHeader` no sabe qué query alimenta la pantalla actual —es `/pokemon/:id` o el listado con sus
-filtros— y no tiene por qué saberlo. La página que sí lo sabe reporta su `fulfilledTimeStamp`,
-`isFetching` y tags a un contexto (`FreshnessProvider`, mismo patrón que ya usa `ToastProvider`), y
-el header lo lee. No es estado de aplicación —muere y renace con cada navegación, así que un slice
-sería guardar en Redux algo que hay que limpiar a mano en cada cambio de ruta— y tampoco es prop
-drilling, porque el header y la página son ramas hermanas del layout.
 
 ## Mejoras futuras identificadas
 

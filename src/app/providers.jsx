@@ -3,7 +3,6 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { ThemeProvider } from 'styled-components';
 import store from 'src/app/store.js';
 import { persistor } from 'src/app/persistor.js';
-import ConnectionIndicator from 'src/features/connection/components/ConnectionIndicator/ConnectionIndicator.jsx';
 import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGridSkeleton/PokemonGridSkeleton.jsx';
 import { APP_TITLE } from 'src/shared/lib/constants/app.js';
 import AppHeader from 'src/shared/ui/AppHeader/AppHeader.jsx';
@@ -26,7 +25,7 @@ const Providers = ({ children }) => (
           persistor={persistor}
           loading={
             <>
-              <AppHeader status={<ConnectionIndicator />}>{APP_TITLE}</AppHeader>
+              <AppHeader>{APP_TITLE}</AppHeader>
               <PageLayout>
                 <PokemonGridSkeleton />
               </PageLayout>
