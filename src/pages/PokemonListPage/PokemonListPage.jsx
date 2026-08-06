@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import PokemonFilterBar from 'src/features/filters/components/PokemonFilterBar/PokemonFilterBar.jsx';
 import { usePokemonFilters } from 'src/features/filters/hooks/usePokemonFilters.js';
+import { useDataFreshness } from 'src/features/connection/hooks/useDataFreshness.js';
 import EmptyState from 'src/shared/ui/EmptyState/EmptyState.jsx';
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
@@ -8,6 +10,7 @@ import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import PokemonGrid from 'src/features/pokemon-list/components/PokemonGrid/PokemonGrid.jsx';
 import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGridSkeleton/PokemonGridSkeleton.jsx';
 import PokemonListFooter from 'src/features/pokemon-list/components/PokemonListFooter/PokemonListFooter.jsx';
+import { POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
 import {
   EMPTY_DEX_MESSAGE,
   NO_SEARCH_RESULTS_MESSAGE,
@@ -20,6 +23,7 @@ const PokemonListPage = () => {
   const {
     data,
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
@@ -27,9 +31,20 @@ const PokemonListPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isFetchNextPageError,
+    fulfilledTimeStamp,
   } = useGetPokemonPageInfiniteQuery(filters);
 
   const pokemon = (data?.pages ?? []).flat();
+
+  // `fulfilledTimeStamp` es uno por entrada de cache y `fetchNextPage` lo reescribe: cambia
+  // exactamente cuando cambia el contenido de `pokemon`, asi que sirve como su proxy estable.
+  const tags = useMemo(
+    () => pokemon.map((entry) => ({ type: POKEMON_TAG_TYPE, id: entry.id })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fulfilledTimeStamp],
+  );
+
+  useDataFreshness({ fulfilledTimeStamp, isFetching, tags });
 
   const renderContent = () => {
     if (isLoading) return <PokemonGridSkeleton />;

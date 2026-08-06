@@ -17,4 +17,9 @@ export const StyledButton = styled.button`
   cursor: pointer;
 
   ${({ $variant }) => VARIANT_STYLES[$variant]}
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
