@@ -5,7 +5,6 @@ export const Wrapper = styled.section`
   flex-direction: column;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.xs};
-  padding: ${({ theme }) => theme.spacing.lg} 0;
 `;
 
 export const DexNumber = styled.span`

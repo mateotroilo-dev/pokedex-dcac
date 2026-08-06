@@ -11,13 +11,15 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
 > con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo y un
 > botón de reintentar si una request falla—, **el detalle** —`/pokemon/:id` abre desde cualquier card
-> del listado sin volver a pedir nada, y por URL directa muestra artwork, número, nombre y tipos, con
-> su propio skeleton y una distinción entre "no existe" (sin reintento) y un fallo cualquiera (con
-> reintento)—, la **red de CI y deploy**: workflow de GitHub Actions y demo desplegada en Vercel, y el
-> **router con su chrome propio**: layout con header y link a home, una página para rutas inexistentes
-> y otra para errores no manejados. Falta el buscador, los filtros, el cuerpo del detalle (sprites
-> alternativos, stats, habilidades), el equipo y la comparación. Este README describe únicamente lo
-> que ya existe en el código; se amplía a medida que cada parte se implementa.
+> del listado sin volver a pedir nada, y por URL directa muestra una galería con los sprites que la
+> entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde una tira de
+> miniaturas, más número, nombre y tipos, con su propio skeleton y una distinción entre "no existe"
+> (sin reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de
+> GitHub Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header
+> y link a home, una página para rutas inexistentes y otra para errores no manejados. Falta el
+> buscador, los filtros, el cuerpo del detalle (stats, habilidades, alto y peso), el equipo y la
+> comparación. Este README describe únicamente lo que ya existe en el código; se amplía a medida que
+> cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -66,7 +68,7 @@ Tres reglas la sostienen:
   la carpeta (`Badge/Badge.jsx`, no `index.jsx`). Los imports son explícitos y no hay barrels.
 - **Lo que baja a `shared/ui` baja sin dominio.** `Badge` recibe un color y un texto; el que sabe
   traducir `'fire'` a un color es `PokemonTypeBadge`, del lado de la feature. Es la razón de que
-  `Card`, `Grid` y `ProgressiveImage` no mencionen Pokémon en ninguna línea.
+  `Card`, `Grid`, `ProgressiveImage` e `ImageGallery` no mencionen Pokémon en ninguna línea.
 
 ## Decisiones técnicas
 

@@ -6,12 +6,15 @@ import { ROUTES } from 'src/shared/lib/constants/routes.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { HOME_LINK_LABEL } from 'src/shared/ui/HomeLink/HomeLink.constants.js';
 import { POKEMON_NOT_FOUND_MESSAGE } from 'src/pages/PokemonDetailPage/PokemonDetailPage.constants.js';
+import { toPokemon } from 'src/shared/lib/toPokemon.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
 import { server } from 'test/msw/server.js';
 import { renderWithProviders } from 'test/utils/renderWithProviders.jsx';
 
 const DETAIL_URL = `${POKEAPI_BASE_URL}pokemon/:id`;
 const SERVER_ERROR_MESSAGE = 'Server Error';
+
+const bulbasaur = toPokemon(pokemonDetailResponse);
 
 const routes = [{ path: ROUTES.POKEMON_DETAIL, element: <PokemonDetailPage /> }];
 
@@ -27,6 +30,21 @@ describe('PokemonDetailPage', () => {
     expect(screen.getByText('#0001')).toBeInTheDocument();
     expect(screen.getByText('grass')).toBeInTheDocument();
     expect(screen.getByText('poison')).toBeInTheDocument();
+  });
+
+  it('leaves the gallery main image as the only named image on the screen', async () => {
+    server.use(http.get(DETAIL_URL, () => HttpResponse.json(pokemonDetailResponse)));
+
+    renderAt('/pokemon/1');
+
+    // Las miniaturas van con alt="", asi que no cuentan como img para getAllByRole. Que quede una
+    // sola es lo que verifica que el summary ya no trae su propia copia del artwork.
+    expect(await screen.findByRole('heading', { name: 'bulbasaur' })).toBeInTheDocument();
+
+    const images = screen.getAllByRole('img');
+
+    expect(images).toHaveLength(1);
+    expect(images[0]).toHaveAttribute('src', bulbasaur.sprites.artwork);
   });
 
   it('shows the not-found message, without a retry button, for a 404', async () => {

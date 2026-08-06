@@ -4,8 +4,9 @@ import HomeLink from 'src/shared/ui/HomeLink/HomeLink.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
 import { useGetPokemonByIdQuery } from 'src/services/pokemonApi.js';
 import { POKEMON_ID_PARAM } from 'src/shared/lib/constants/routes.js';
+import PokemonDetailSkeleton from 'src/features/pokemon-detail/components/PokemonDetailSkeleton/PokemonDetailSkeleton.jsx';
+import PokemonSpriteGallery from 'src/features/pokemon-detail/components/PokemonSpriteGallery/PokemonSpriteGallery.jsx';
 import PokemonSummary from 'src/features/pokemon-detail/components/PokemonSummary/PokemonSummary.jsx';
-import PokemonSummarySkeleton from 'src/features/pokemon-detail/components/PokemonSummarySkeleton/PokemonSummarySkeleton.jsx';
 import { POKEMON_NOT_FOUND_MESSAGE } from 'src/pages/PokemonDetailPage/PokemonDetailPage.constants.js';
 
 const PokemonDetailPage = () => {
@@ -26,10 +27,15 @@ const PokemonDetailPage = () => {
         </ErrorState>
       );
     }
-    if (isLoading) return <PokemonSummarySkeleton />;
+    if (isLoading) return <PokemonDetailSkeleton />;
     if (isError) return <ErrorState message={error.message} onRetry={refetch} />;
 
-    return <PokemonSummary pokemon={data} />;
+    return (
+      <>
+        <PokemonSpriteGallery pokemon={data} />
+        <PokemonSummary pokemon={data} />
+      </>
+    );
   };
 
   return <PageLayout>{renderContent()}</PageLayout>;
