@@ -7,6 +7,10 @@ export const theme = {
     textInverted: '#ffffff',
     border: '#e3e6eb',
     accent: '#e63946',
+    // Verde azulado: el hueco de tono mas grande entre las 18 paletas de tipo (entre grass ~100° y
+    // ice ~177°). El acento normal (rojo) colisiona con fuego/lucha/tierra/roca, y un azul lleno
+    // colisiona con water — ambos ya se probaron y fallaban cuando la comparacion caia en ese tipo.
+    accentSecondary: '#0d9488',
   },
   spacing: {
     xs: '0.25rem',

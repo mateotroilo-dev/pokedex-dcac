@@ -1,4 +1,4 @@
-import { TOTAL_LABEL } from 'src/features/pokemon-detail/components/PokemonStatTotal/PokemonStatTotal.constants.js';
+import { TOTAL_LABEL } from 'src/shared/lib/constants/stats.js';
 import {
   Row,
   Value,

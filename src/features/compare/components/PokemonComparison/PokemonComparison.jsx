@@ -3,6 +3,8 @@ import EmptyState from 'src/shared/ui/EmptyState/EmptyState.jsx';
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
 import Skeleton from 'src/shared/ui/Skeleton/Skeleton.jsx';
 import PokemonComparisonColumn from 'src/features/compare/components/PokemonComparisonColumn/PokemonComparisonColumn.jsx';
+import PokemonStatRadar from 'src/features/compare/components/PokemonStatRadar/PokemonStatRadar.jsx';
+import PokemonStatComparison from 'src/features/compare/components/PokemonStatComparison/PokemonStatComparison.jsx';
 import { POKEMON_COMPARISON_COLUMN_HEIGHT } from 'src/features/compare/constants.js';
 import {
   COMPARISON_EMPTY_MESSAGE,
@@ -56,10 +58,14 @@ const PokemonComparison = ({ idA, idB }) => {
   }
 
   return (
-    <Columns>
-      <PokemonComparisonColumn pokemon={pokemonA} />
-      <PokemonComparisonColumn pokemon={pokemonB} />
-    </Columns>
+    <>
+      <Columns>
+        <PokemonComparisonColumn pokemon={pokemonA} />
+        <PokemonComparisonColumn pokemon={pokemonB} />
+      </Columns>
+      <PokemonStatComparison pokemonA={pokemonA} pokemonB={pokemonB} />
+      <PokemonStatRadar pokemonA={pokemonA} pokemonB={pokemonB} />
+    </>
   );
 };
 
