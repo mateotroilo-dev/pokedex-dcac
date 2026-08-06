@@ -30,6 +30,9 @@ describe('PokemonDetailPage', () => {
     expect(screen.getByText('#0001')).toBeInTheDocument();
     expect(screen.getByText('grass')).toBeInTheDocument();
     expect(screen.getByText('poison')).toBeInTheDocument();
+    expect(screen.getByText('0,7 m')).toBeInTheDocument();
+    expect(screen.getByText('6,9 kg')).toBeInTheDocument();
+    expect(screen.getByText('overgrow')).toBeInTheDocument();
   });
 
   it('leaves the gallery main image as the only named image on the screen', async () => {

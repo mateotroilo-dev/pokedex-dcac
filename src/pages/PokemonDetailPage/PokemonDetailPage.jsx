@@ -5,7 +5,9 @@ import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
 import { useGetPokemonByIdQuery } from 'src/services/pokemonApi.js';
 import { POKEMON_ID_PARAM } from 'src/shared/lib/constants/routes.js';
 import PokemonDetailSkeleton from 'src/features/pokemon-detail/components/PokemonDetailSkeleton/PokemonDetailSkeleton.jsx';
+import PokemonFacts from 'src/features/pokemon-detail/components/PokemonFacts/PokemonFacts.jsx';
 import PokemonSpriteGallery from 'src/features/pokemon-detail/components/PokemonSpriteGallery/PokemonSpriteGallery.jsx';
+import PokemonStats from 'src/features/pokemon-detail/components/PokemonStats/PokemonStats.jsx';
 import PokemonSummary from 'src/features/pokemon-detail/components/PokemonSummary/PokemonSummary.jsx';
 import { POKEMON_NOT_FOUND_MESSAGE } from 'src/pages/PokemonDetailPage/PokemonDetailPage.constants.js';
 
@@ -34,6 +36,8 @@ const PokemonDetailPage = () => {
       <>
         <PokemonSpriteGallery pokemon={data} />
         <PokemonSummary pokemon={data} />
+        <PokemonStats pokemon={data} />
+        <PokemonFacts pokemon={data} />
       </>
     );
   };
