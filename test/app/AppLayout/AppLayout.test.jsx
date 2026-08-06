@@ -20,4 +20,10 @@ describe('AppLayout', () => {
       '/compare',
     );
   });
+
+  it('shows the connection indicator in the header', () => {
+    renderWithProviders(null, { routes, initialEntries: ['/'] });
+
+    expect(screen.getByText('En línea')).toBeInTheDocument();
+  });
 });

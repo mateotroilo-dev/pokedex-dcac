@@ -1,8 +1,11 @@
 import { http, HttpResponse } from 'msw';
 import { screen } from '@testing-library/react';
+import AppLayout from 'src/app/AppLayout/AppLayout.jsx';
 import PokemonDetailPage from 'src/pages/PokemonDetailPage/PokemonDetailPage.jsx';
+import { CACHED_LABEL } from 'src/features/connection/components/DataFreshnessIndicator/DataFreshnessIndicator.constants.js';
 import { POKEAPI_BASE_URL } from 'src/shared/lib/constants/api.js';
 import { ROUTES } from 'src/shared/lib/constants/routes.js';
+import { UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { HOME_LINK_LABEL } from 'src/shared/ui/HomeLink/HomeLink.constants.js';
 import { ADD_TO_TEAM_LABEL } from 'src/features/team/components/TeamToggleButton/TeamToggleButton.constants.js';
@@ -91,5 +94,29 @@ describe('PokemonDetailPage', () => {
 
     expect(await screen.findByText(POKEMON_NOT_FOUND_MESSAGE)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: RETRY_LABEL })).not.toBeInTheDocument();
+  });
+
+  it('reports its freshness to the header, which shows the page as cached when it hydrated after the fetch', async () => {
+    server.use(http.get(DETAIL_URL, () => HttpResponse.json(pokemonDetailResponse)));
+
+    // La pagina sola no trae header: hay que montar la ruta con AppLayout, que la envuelve en el
+    // FreshnessProvider real. El hydratedAt "de disco" se simula mas adelante que el fetch en vivo
+    // de MSW, que es la misma relacion de orden que produce una sesion que rehidrato despues de
+    // haber cacheado el dato.
+    renderWithProviders(null, {
+      routes: [
+        {
+          path: '/',
+          element: <AppLayout />,
+          children: [{ path: ROUTES.POKEMON_DETAIL, element: <PokemonDetailPage /> }],
+        },
+      ],
+      initialEntries: ['/pokemon/1'],
+      preloadedState: { [UI_REDUCER_PATH]: { hydratedAt: Date.now() + 60_000 } },
+    });
+
+    await screen.findByRole('heading', { name: 'bulbasaur' });
+
+    expect(await screen.findByText(new RegExp(CACHED_LABEL))).toBeInTheDocument();
   });
 });
