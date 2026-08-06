@@ -18,10 +18,13 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > una tira de miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la
 > suma total, altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe"
 > (sin reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de
-> GitHub Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header
-> y link a home, una página para rutas inexistentes y otra para errores no manejados. Falta el
-> filtro por stats, el equipo y la comparación. Este README describe
-> únicamente lo que ya existe en el código; se amplía a medida que cada parte se implementa.
+> GitHub Actions y demo desplegada en Vercel, el **router con su chrome propio**: layout con header
+> y link a home, una página para rutas inexistentes y otra para errores no manejados, y **Mi
+> Equipo** —hasta 6 pokémon persistidos en `localStorage`, con un botón de agregar/quitar en el
+> detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en el header, y toasts
+> que avisan al agregar, al quitar y al intentar un séptimo—. Falta el filtro por stats y la
+> comparación. Este README describe únicamente lo que ya existe en el código; se amplía a medida
+> que cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -158,16 +161,16 @@ verde para poder mergear a `main`—, así que todo lo que Vercel termina desple
 
 ### El home y la página de error se cargan eager; el resto, diferido
 
-De las cuatro rutas que existen hoy, dos se bajan en el bundle inicial y dos son `lazy`. No es
+De las cinco rutas que existen hoy, dos se bajan en el bundle inicial y tres son `lazy`. No es
 inconsistencia: cada una tiene un motivo propio para quedar de un lado o del otro.
 
 `PokemonListPage` es eager porque es la ruta de entrada: diferirla solo agrega un round-trip después
 del `PersistGate`, con el chrome ya pintado y nada más que hacer mientras se espera. `ErrorPage` es
 eager **a propósito**, aunque no sea la ruta de entrada: es el `errorElement` de la raíz, así que
 corre en el peor momento posible —algo de la app ya falló—, y un chunk que todavía no bajó no puede
-ser quien reporte que algo salió mal. La página de 404 y `PokemonDetailPage` sí son `lazy`: ninguna
-es la ruta de entrada, ninguna corre en un momento crítico, y el patrón que dejó puesto la 404 es el
-que usan el detalle y las rutas de producto que faltan (equipo, comparación).
+ser quien reporte que algo salió mal. La página de 404, `PokemonDetailPage` y `TeamPage` sí son
+`lazy`: ninguna es la ruta de entrada, ninguna corre en un momento crítico, y el patrón que dejó
+puesto la 404 es el que usa el resto de las rutas de producto, incluida la comparación que falta.
 
 ### `eslint-config-prettier` va último en el array
 
@@ -302,6 +305,27 @@ Escalar contra el propio máximo haría que cualquier pokémon se vea con una ba
 de HP — comparable solo contra sí mismo, no contra el resto de la dex. Contra 255 las barras son
 comparables entre pokémon: el 45 de HP de Bulbasaur se ve corto de verdad, que es la información real.
 El costo aceptado es que casi ninguna barra llega a la mitad del ancho.
+
+### El slice de equipo guarda ids, no pokémon
+
+`team` es la primera slice cuyo estado no viene de la API: es un dato del usuario, no cache. Aun así
+no copia los pokémon adentro. `transformResponse` ya guarda en `localStorage`, vía RTK Query, todo lo
+que la UI necesita de cada pokémon (ver Cache y persistencia); duplicarlo en el slice del equipo
+repetiría esos bytes por partida doble y los dejaría congelados en el momento en que se agregaron,
+sin enterarse de nada que cambie después. El slice guarda `{ ids: [] }`, y `TeamMemberCard` lee cada
+pokémon del cache que `pokemon-list` o `pokemon-detail` ya sembraron con `useGetPokemonByIdQuery`,
+pidiendo a la red solo los que falten. El costo es que un id sin detalle en cache —cache vencido o
+limpiado— dispara requests al entrar a `/team`; es correcto, y la primera pantalla de la app que
+puede cargar de a pedazos.
+
+### El botón de agregar/quitar vive en el detalle, no en las cards del listado
+
+`TeamToggleButton` lee el store del equipo, así que es un componente de `features/team/`: meterlo
+adentro de `PokemonCard` haría que `pokemon-list` importe de `team` y rompería la regla 1 (una
+feature nunca importa de otra). El detalle es una página, y las páginas son el único lugar donde el
+contrato permite componer dos features. El costo aceptado es que armar un equipo completo pide abrir
+cada pokémon uno por uno desde el listado; si eso resulta insufrible en el uso real, la salida es un
+slot que `PokemonListPage` le pase a `PokemonGrid`, nunca un import cruzado entre features.
 
 ## Mejoras futuras identificadas
 

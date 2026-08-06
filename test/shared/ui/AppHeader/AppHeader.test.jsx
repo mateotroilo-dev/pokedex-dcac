@@ -19,4 +19,19 @@ describe('AppHeader', () => {
 
     expect(screen.getByRole('link', { name: 'Pokedex DCAC' })).toBeInTheDocument();
   });
+
+  it('renders the nav slot when it receives one', () => {
+    renderWithProviders(
+      <AppHeader nav={<Link to="/team">Mi Equipo</Link>}>Pokedex DCAC</AppHeader>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Mi Equipo' })).toBeInTheDocument();
+  });
+
+  it('still renders the heading with no nav slot', () => {
+    renderWithProviders(<AppHeader>Pokedex DCAC</AppHeader>);
+
+    expect(screen.getByRole('heading', { name: 'Pokedex DCAC' })).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
 });

@@ -5,6 +5,7 @@ import { POKEAPI_BASE_URL } from 'src/shared/lib/constants/api.js';
 import { ROUTES } from 'src/shared/lib/constants/routes.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
 import { HOME_LINK_LABEL } from 'src/shared/ui/HomeLink/HomeLink.constants.js';
+import { ADD_TO_TEAM_LABEL } from 'src/features/team/components/TeamToggleButton/TeamToggleButton.constants.js';
 import { POKEMON_NOT_FOUND_MESSAGE } from 'src/pages/PokemonDetailPage/PokemonDetailPage.constants.js';
 import { toPokemon } from 'src/shared/lib/toPokemon.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
@@ -35,6 +36,14 @@ describe('PokemonDetailPage', () => {
     expect(screen.getByText('overgrow')).toBeInTheDocument();
   });
 
+  it('shows the team toggle once the pokemon comes back', async () => {
+    server.use(http.get(DETAIL_URL, () => HttpResponse.json(pokemonDetailResponse)));
+
+    renderAt('/pokemon/1');
+
+    expect(await screen.findByRole('button', { name: ADD_TO_TEAM_LABEL })).toBeInTheDocument();
+  });
+
   it('leaves the gallery main image as the only named image on the screen', async () => {
     server.use(http.get(DETAIL_URL, () => HttpResponse.json(pokemonDetailResponse)));
 
@@ -60,6 +69,7 @@ describe('PokemonDetailPage', () => {
     expect(await screen.findByText(POKEMON_NOT_FOUND_MESSAGE)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: HOME_LINK_LABEL })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: RETRY_LABEL })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: ADD_TO_TEAM_LABEL })).not.toBeInTheDocument();
   });
 
   it('offers a retry for any other failure', async () => {
@@ -73,6 +83,7 @@ describe('PokemonDetailPage', () => {
 
     expect(await screen.findByRole('button', { name: RETRY_LABEL })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(SERVER_ERROR_MESSAGE);
+    expect(screen.queryByRole('button', { name: ADD_TO_TEAM_LABEL })).not.toBeInTheDocument();
   });
 
   it('shows the not-found message for an id that is not a number, without asking the API', async () => {

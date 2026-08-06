@@ -12,3 +12,9 @@ export const Wrapper = styled.div`
 export const Message = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
 `;
+
+export const Illustration = styled.svg`
+  width: calc(${({ theme }) => theme.spacing.xl} * 3);
+  height: calc(${({ theme }) => theme.spacing.xl} * 3);
+  color: ${({ theme }) => theme.colors.textMuted};
+`;

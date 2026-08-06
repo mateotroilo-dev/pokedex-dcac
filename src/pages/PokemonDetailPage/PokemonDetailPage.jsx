@@ -9,6 +9,7 @@ import PokemonFacts from 'src/features/pokemon-detail/components/PokemonFacts/Po
 import PokemonSpriteGallery from 'src/features/pokemon-detail/components/PokemonSpriteGallery/PokemonSpriteGallery.jsx';
 import PokemonStats from 'src/features/pokemon-detail/components/PokemonStats/PokemonStats.jsx';
 import PokemonSummary from 'src/features/pokemon-detail/components/PokemonSummary/PokemonSummary.jsx';
+import TeamToggleButton from 'src/features/team/components/TeamToggleButton/TeamToggleButton.jsx';
 import { POKEMON_NOT_FOUND_MESSAGE } from 'src/pages/PokemonDetailPage/PokemonDetailPage.constants.js';
 
 const PokemonDetailPage = () => {
@@ -36,6 +37,7 @@ const PokemonDetailPage = () => {
       <>
         <PokemonSpriteGallery pokemon={data} />
         <PokemonSummary pokemon={data} />
+        <TeamToggleButton pokemon={data} />
         <PokemonStats pokemon={data} />
         <PokemonFacts pokemon={data} />
       </>
