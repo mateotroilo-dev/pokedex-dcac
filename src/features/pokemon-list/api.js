@@ -3,6 +3,7 @@ import { baseApi } from 'src/services/baseApi.js';
 // 'getPokemonById' no existe todavia y el upsert de abajo no apunta a ninguna entrada de cache.
 import { pokemonApi } from 'src/services/pokemonApi.js';
 import { POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
+import { idFromApiUrl } from 'src/shared/lib/idFromApiUrl.js';
 import { limitConcurrency } from 'src/shared/lib/limitConcurrency.js';
 import { parseApiError } from 'src/shared/lib/parseApiError.js';
 import { toPokemon } from 'src/shared/lib/toPokemon.js';
@@ -36,14 +37,27 @@ export const pokemonListApi = baseApi.injectEndpoints({
         // que dispara la UI es el de la primera carga fallida, sin paginas cacheadas todavia.
         refetchCachedPages: false,
       },
-      queryFn: async ({ queryArg: term, pageParam }, { dispatch }, extraOptions, baseQuery) => {
+      queryFn: async ({ queryArg, pageParam }, { dispatch }, extraOptions, baseQuery) => {
+        const { term, type, generation } = queryArg ?? {};
+
         const indexQuery = dispatch(pokemonListApi.endpoints.getPokemonIndex.initiate());
+        const typeQuery = type && dispatch(pokemonListApi.endpoints.getIdsByType.initiate(type));
+        const generationQuery =
+          generation && dispatch(pokemonListApi.endpoints.getIdsByGeneration.initiate(generation));
 
         try {
           const { data: index, error: indexError } = await indexQuery;
           if (indexError) return { error: indexError };
 
-          const matchingIndex = filterPokemonIndex(index, term);
+          const { data: typeIds, error: typeError } = typeQuery ? await typeQuery : {};
+          if (typeError) return { error: typeError };
+
+          const { data: generationIds, error: generationError } = generationQuery
+            ? await generationQuery
+            : {};
+          if (generationError) return { error: generationError };
+
+          const matchingIndex = filterPokemonIndex(index, { term, typeIds, generationIds });
           const pageEntries = matchingIndex.slice(pageParam, pageParam + PAGE_SIZE);
           const fetchDetail = (entry) => async () => {
             const { data, error } = await baseQuery(`pokemon/${entry.id}`);
@@ -69,12 +83,45 @@ export const pokemonListApi = baseApi.injectEndpoints({
           return { error: parseApiError(error) };
         } finally {
           indexQuery.unsubscribe();
+          typeQuery?.unsubscribe();
+          generationQuery?.unsubscribe();
         }
       },
       providesTags: (result) =>
         (result?.pages ?? []).flat().map((pokemon) => ({ type: POKEMON_TAG_TYPE, id: pokemon.id })),
     }),
+
+    // Sin providesTags: no son entradas de pokemon y nada las invalida.
+    getIdsByType: build.query({
+      queryFn: async (typeName, _queryApi, _extraOptions, baseQuery) => {
+        const { data, error } = await baseQuery(`type/${typeName}`);
+        if (error) {
+          // Un 404 no es un error de la app: el criterio no existe y se ignora, no falla.
+          if (error.status === 404) return { data: null };
+          return { error: parseApiError(error) };
+        }
+
+        return { data: data.pokemon.map(({ pokemon }) => idFromApiUrl(pokemon.url)) };
+      },
+    }),
+
+    getIdsByGeneration: build.query({
+      queryFn: async (generationId, _queryApi, _extraOptions, baseQuery) => {
+        const { data, error } = await baseQuery(`generation/${generationId}`);
+        if (error) {
+          if (error.status === 404) return { data: null };
+          return { error: parseApiError(error) };
+        }
+
+        return { data: data.pokemon_species.map((species) => idFromApiUrl(species.url)) };
+      },
+    }),
   }),
 });
 
-export const { useGetPokemonIndexQuery, useGetPokemonPageInfiniteQuery } = pokemonListApi;
+export const {
+  useGetPokemonIndexQuery,
+  useGetPokemonPageInfiniteQuery,
+  useGetIdsByTypeQuery,
+  useGetIdsByGenerationQuery,
+} = pokemonListApi;

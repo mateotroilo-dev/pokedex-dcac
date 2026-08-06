@@ -10,16 +10,17 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
 > pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
 > con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo, un
-> botón de reintentar si una request falla y un buscador por nombre o número que filtra la dex
-> completa sin perder la posición en el historial—, **el detalle** —`/pokemon/:id` abre desde
+> botón de reintentar si una request falla, y un buscador por nombre o número más selects de tipo y
+> generación, combinables entre sí y con la búsqueda, que filtran la dex completa sin perder la
+> posición en el historial—, **el detalle** —`/pokemon/:id` abre desde
 > cualquier card del listado sin volver a pedir nada, y por URL directa muestra una galería con los
 > sprites que la entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde
 > una tira de miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la
 > suma total, altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe"
 > (sin reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de
 > GitHub Actions y demo desplegada en Vercel, y el **router con su chrome propio**: layout con header
-> y link a home, una página para rutas inexistentes y otra para errores no manejados. Falta el resto
-> de los filtros (tipo, generación, stats), el equipo y la comparación. Este README describe
+> y link a home, una página para rutas inexistentes y otra para errores no manejados. Falta el
+> filtro por stats, el equipo y la comparación. Este README describe
 > únicamente lo que ya existe en el código; se amplía a medida que cada parte se implementa.
 
 ## Instalación y ejecución
@@ -280,6 +281,19 @@ La contracara es que los resultados de una búsqueda no se persisten en `localSt
 20 pokémon por término escrito llenaría la cuota de ~5 MB mucho antes que guardar solo la dex sin
 filtrar, así que `pickFulfilledQueries` los deja afuera a propósito (ver Cache y persistencia).
 
+### El filtro por tipo pide `/type`, no lee los detalles que ya están en cache
+
+El índice que ya está en memoria (`getPokemonIndex`) solo trae id y nombre: PokeAPI no expone el
+tipo en el listado, y el único lugar donde aparece es el detalle de cada pokémon. Filtrar por tipo
+leyendo esos detalles exigiría tenerlos **todos** cacheados de antemano —los 1025 de la dex
+nacional—, que es exactamente la llamada redundante que el resto de esta app evita a propósito (ver
+Cache y persistencia, arriba). `/type/{nombre}` en cambio devuelve de una los ids de todos los
+pokémon de ese tipo, así que `getIdsByType` pide esa lista una vez por tipo elegido y la interseca
+contra el índice ya en memoria, con el mismo costo que ya tenía la búsqueda por nombre: ningún
+detalle se baja hasta que se sabe qué página mostrar. Por el mismo motivo, `getIdsByGeneration` lee
+`/generation/{id}` en vez de derivar la generación del id del pokémon: la relación id → generación
+no es aritmética simple (los rangos de la dex nacional no son parejos) y PokeAPI ya la resuelve.
+
 ### Las barras de stats escalan contra 255, no contra el máximo del pokémon
 
 `PokemonStats` le pasa a cada `PokemonStatBar` el mismo `max`: `MAX_BASE_STAT = 255`, el tope real de
@@ -291,6 +305,10 @@ El costo aceptado es que casi ninguna barra llega a la mitad del ancho.
 
 ## Mejoras futuras identificadas
 
+- **Filtro por más de un tipo a la vez** (fuego + volador). El `<select>` nativo de un solo valor no
+  sirve para eso —`<select multiple>` no es usable en este contexto—, así que hace falta un control
+  multi, y además decidir si los tipos elegidos combinan en AND o en OR, que son dos features
+  distintas y no una variante de la misma.
 - **Contratos de props.** `react/prop-types` está apagado y no hay reemplazo (ni PropTypes ni JSDoc).
   Es sostenible con componentes chicos; cuando alguno crezca, nada va a avisar si una prop cambia de
   forma. La señal para revisar la decisión es la primera vez que haya que leer el componente entero

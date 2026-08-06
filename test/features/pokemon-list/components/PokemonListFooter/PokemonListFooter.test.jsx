@@ -59,12 +59,12 @@ describe('PokemonListFooter', () => {
     expect(screen.getByText(DEX_COMPLETE_MESSAGE)).toBeInTheDocument();
   });
 
-  it('shows the no-more-results message instead, when the closing page came from a search', () => {
+  it('shows the no-more-results message instead, when the closing page came from a filter', () => {
     renderWithProviders(
       <PokemonListFooter
         {...IDLE_WITH_NEXT_PAGE}
         hasNextPage={false}
-        hasSearchTerm
+        hasActiveFilters
         onLoadMore={() => {}}
       />,
     );

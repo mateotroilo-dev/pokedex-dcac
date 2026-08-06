@@ -1,4 +1,4 @@
-import PokemonSearchField from 'src/features/filters/components/PokemonSearchField/PokemonSearchField.jsx';
+import PokemonFilterBar from 'src/features/filters/components/PokemonFilterBar/PokemonFilterBar.jsx';
 import { usePokemonFilters } from 'src/features/filters/hooks/usePokemonFilters.js';
 import EmptyState from 'src/shared/ui/EmptyState/EmptyState.jsx';
 import ErrorState from 'src/shared/ui/ErrorState/ErrorState.jsx';
@@ -14,9 +14,8 @@ import {
 } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
 
 const PokemonListPage = () => {
-  const { searchTerm } = usePokemonFilters();
-  const hasSearchTerm = Boolean(searchTerm);
-  // Sin busqueda el arg tiene que seguir siendo undefined, no '': es la clave de cache que ya esta
+  const { filters, hasActiveFilters } = usePokemonFilters();
+  // Sin filtros el arg tiene que seguir siendo undefined, no {}: es la clave de cache que ya esta
   // persistida en el disco de cualquiera que uso la app antes de esta slice.
   const {
     data,
@@ -28,7 +27,7 @@ const PokemonListPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isFetchNextPageError,
-  } = useGetPokemonPageInfiniteQuery(searchTerm || undefined);
+  } = useGetPokemonPageInfiniteQuery(filters);
 
   const pokemon = (data?.pages ?? []).flat();
 
@@ -38,7 +37,9 @@ const PokemonListPage = () => {
     // Con paginas ya en pantalla, un fallo de la siguiente lo cuenta el pie, no esto.
     if (isError && !data) return <ErrorState message={error.message} onRetry={refetch} />;
     if (pokemon.length === 0) {
-      return <EmptyState message={hasSearchTerm ? NO_SEARCH_RESULTS_MESSAGE : EMPTY_DEX_MESSAGE} />;
+      return (
+        <EmptyState message={hasActiveFilters ? NO_SEARCH_RESULTS_MESSAGE : EMPTY_DEX_MESSAGE} />
+      );
     }
 
     return (
@@ -49,7 +50,7 @@ const PokemonListPage = () => {
           isFetchNextPageError={isFetchNextPageError}
           isFetchingNextPage={isFetchingNextPage}
           onLoadMore={fetchNextPage}
-          hasSearchTerm={hasSearchTerm}
+          hasActiveFilters={hasActiveFilters}
         />
       </>
     );
@@ -57,7 +58,7 @@ const PokemonListPage = () => {
 
   return (
     <PageLayout>
-      <PokemonSearchField />
+      <PokemonFilterBar />
       {renderContent()}
     </PageLayout>
   );

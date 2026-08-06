@@ -12,7 +12,7 @@ const PokemonListFooter = ({
   isFetchNextPageError,
   isFetchingNextPage,
   onLoadMore,
-  hasSearchTerm,
+  hasActiveFilters,
 }) => {
   if (isFetchNextPageError) {
     return <ErrorState message={LOAD_MORE_ERROR_MESSAGE} onRetry={onLoadMore} />;
@@ -21,7 +21,7 @@ const PokemonListFooter = ({
   if (!hasNextPage) {
     return (
       <ClosingMessage>
-        {hasSearchTerm ? NO_MORE_RESULTS_MESSAGE : DEX_COMPLETE_MESSAGE}
+        {hasActiveFilters ? NO_MORE_RESULTS_MESSAGE : DEX_COMPLETE_MESSAGE}
       </ClosingMessage>
     );
   }

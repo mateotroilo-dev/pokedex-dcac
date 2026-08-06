@@ -8,9 +8,13 @@ import { PAGE_SIZE, POKEMON_INDEX_TAG_ID } from 'src/features/pokemon-list/const
 import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
 import { createPokemonIndexResponse } from 'test/msw/fixtures/createPokemonIndexResponse.js';
+import { typeResponse } from 'test/msw/fixtures/typeResponse.js';
+import { generationResponse } from 'test/msw/fixtures/generationResponse.js';
 
 const INDEX_URL = `${POKEAPI_BASE_URL}pokemon`;
 const DETAIL_URL = `${POKEAPI_BASE_URL}pokemon/:id`;
+const TYPE_URL = `${POKEAPI_BASE_URL}type/:name`;
+const GENERATION_URL = `${POKEAPI_BASE_URL}generation/:id`;
 
 const SPECIES_IN_INDEX = PAGE_SIZE + 5;
 
@@ -31,6 +35,21 @@ const detailHandler = (failingId) =>
       name: `pokemon-${params.id}`,
     });
   });
+
+const typeHandler = (failingName) =>
+  http.get(TYPE_URL, ({ params }) => {
+    if (params.name === 'nonexistent') {
+      return HttpResponse.json({ message: 'Not Found' }, { status: 404 });
+    }
+    if (params.name === failingName) {
+      return HttpResponse.json({ message: 'Server Error' }, { status: 500 });
+    }
+
+    return HttpResponse.json(typeResponse);
+  });
+
+const generationHandler = () =>
+  http.get(GENERATION_URL, () => HttpResponse.json(generationResponse));
 
 describe('getPokemonIndex', () => {
   it('returns the base species, without the alternate forms', async () => {
@@ -216,7 +235,7 @@ describe('getPokemonPage', () => {
     const store = makeStore();
 
     const { data } = await store.dispatch(
-      pokemonListApi.endpoints.getPokemonPage.initiate('deoxys'),
+      pokemonListApi.endpoints.getPokemonPage.initiate({ term: 'deoxys' }),
     );
 
     expect(data.pages[0]).toHaveLength(1);
@@ -231,13 +250,92 @@ describe('getPokemonPage', () => {
     const store = makeStore();
 
     await store.dispatch(pokemonListApi.endpoints.getPokemonPage.initiate());
-    await store.dispatch(pokemonListApi.endpoints.getPokemonPage.initiate('venusaur'));
+    await store.dispatch(pokemonListApi.endpoints.getPokemonPage.initiate({ term: 'venusaur' }));
 
     const plainPage = pokemonListApi.endpoints.getPokemonPage.select(undefined)(store.getState());
-    const searchPage = pokemonListApi.endpoints.getPokemonPage.select('venusaur')(store.getState());
+    const searchPage = pokemonListApi.endpoints.getPokemonPage.select({ term: 'venusaur' })(
+      store.getState(),
+    );
 
     expect(plainPage.data.pages[0].map((pokemon) => pokemon.id)).toEqual([1, 2, 3, 386, 1025]);
     expect(searchPage.data.pages[0]).toHaveLength(1);
     expect(searchPage.data.pages[0][0]).toEqual(expect.objectContaining({ id: 3 }));
+  });
+
+  it('brings only the pokemon that match the type', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+      typeHandler(),
+    );
+    const store = makeStore();
+
+    const { data } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate({ type: 'grass' }),
+    );
+
+    expect(data.pages[0].map((pokemon) => pokemon.id)).toEqual([1, 2]);
+  });
+
+  it('brings only the pokemon that match the generation', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+      generationHandler(),
+    );
+    const store = makeStore();
+
+    const { data } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate({ generation: 1 }),
+    );
+
+    expect(data.pages[0].map((pokemon) => pokemon.id)).toEqual([1, 2, 3]);
+  });
+
+  it('combines type and search term in AND', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+      typeHandler(),
+    );
+    const store = makeStore();
+
+    const { data } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate({ type: 'grass', term: 'ivy' }),
+    );
+
+    expect(data.pages[0].map((pokemon) => pokemon.id)).toEqual([2]);
+  });
+
+  it('ignores a type that does not exist and brings the full listing', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+      typeHandler(),
+    );
+    const store = makeStore();
+
+    const { data, error } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate({ type: 'nonexistent' }),
+    );
+
+    expect(error).toBeUndefined();
+    expect(data.pages[0].map((pokemon) => pokemon.id)).toEqual([1, 2, 3, 386, 1025]);
+  });
+
+  it('fails the page when getIdsByType fails with something other than a 404', async () => {
+    server.use(
+      http.get(INDEX_URL, () => HttpResponse.json(pokemonIndexResponse)),
+      detailHandler(),
+      typeHandler('grass'),
+    );
+    const store = makeStore();
+
+    const { data, error } = await store.dispatch(
+      pokemonListApi.endpoints.getPokemonPage.initiate({ type: 'grass' }),
+    );
+
+    expect(error).toEqual({ status: 500, message: 'Server Error' });
+    expect(data).toBeUndefined();
   });
 });
