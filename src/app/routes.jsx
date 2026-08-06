@@ -20,6 +20,13 @@ export const routes = [
         },
       },
       {
+        path: ROUTES.TEAM,
+        lazy: async () => {
+          const { default: TeamPage } = await import('src/pages/TeamPage/TeamPage.jsx');
+          return { Component: TeamPage };
+        },
+      },
+      {
         path: ROUTES.NOT_FOUND,
         lazy: async () => {
           const { default: NotFoundPage } = await import('src/pages/NotFoundPage/NotFoundPage.jsx');

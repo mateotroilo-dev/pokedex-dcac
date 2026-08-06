@@ -4,12 +4,13 @@ import { server } from 'test/msw/server.js';
 import store from 'src/app/store.js';
 import { persistor } from 'src/app/persistor.js';
 import { pokemonListApi } from 'src/features/pokemon-list/api.js';
+import { addToTeam } from 'src/features/team/teamSlice.js';
 import {
   BASE_API_REDUCER_PATH,
   POKEAPI_BASE_URL,
   POKEMON_TAG_TYPE,
 } from 'src/shared/lib/constants/api.js';
-import { UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
+import { TEAM_REDUCER_PATH, UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
 import { POKEMON_INDEX_TAG_ID } from 'src/features/pokemon-list/constants.js';
 import {
   API_PERSIST_KEY,
@@ -66,6 +67,16 @@ describe('persistor', () => {
     expect(persistedRoot).not.toHaveProperty(UI_REDUCER_PATH);
   });
 
+  it('writes the team into the root, since it has no config of its own', async () => {
+    store.dispatch(addToTeam(1));
+
+    await vi.waitFor(() => {
+      const raw = readPersisted(ROOT_PERSIST_KEY);
+      expect(raw).toHaveProperty(TEAM_REDUCER_PATH);
+      expect(JSON.parse(raw[TEAM_REDUCER_PATH])).toEqual({ ids: [1] });
+    });
+  });
+
   it('starts the next session from what it wrote', async () => {
     expect(readPersisted(API_PERSIST_KEY)).not.toBeNull();
     expect(readPersisted(UI_PERSIST_KEY)).not.toBeNull();
@@ -80,6 +91,7 @@ describe('persistor', () => {
 
     expect(state[BASE_API_REDUCER_PATH].queries).toHaveProperty(INDEX_CACHE_KEY);
     expect(state[UI_REDUCER_PATH].hydratedAt).toEqual(expect.any(Number));
+    expect(state[TEAM_REDUCER_PATH].ids).toEqual([1]);
     expect(
       nextApi.util.selectInvalidatedBy(state, [
         { type: POKEMON_TAG_TYPE, id: POKEMON_INDEX_TAG_ID },

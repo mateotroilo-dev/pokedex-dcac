@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import { makeStore } from 'src/app/store.js';
+import ToastProvider from 'src/shared/ui/ToastProvider/ToastProvider.jsx';
 import { theme } from 'src/shared/styles/theme.js';
 
 export const renderWithProviders = (
@@ -18,11 +19,13 @@ export const renderWithProviders = (
   const Wrapper = ({ children }) => (
     <ThemeProvider theme={theme}>
       <Provider store={store}>
-        {routes ? (
-          <RouterProvider router={createMemoryRouter(routes, { initialEntries })} />
-        ) : (
-          <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
-        )}
+        <ToastProvider>
+          {routes ? (
+            <RouterProvider router={createMemoryRouter(routes, { initialEntries })} />
+          ) : (
+            <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+          )}
+        </ToastProvider>
       </Provider>
     </ThemeProvider>
   );

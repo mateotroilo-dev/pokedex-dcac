@@ -3,7 +3,7 @@ import { makeStore } from 'src/app/store.js';
 import { rootPersistConfig, uiPersistConfig } from 'src/app/persistConfig.js';
 import uiReducer from 'src/app/uiSlice.js';
 import { baseApi } from 'src/services/baseApi.js';
-import { UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
+import { TEAM_REDUCER_PATH, UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
 
 describe('makeStore', () => {
   it('mounts the baseApi reducer in the state', () => {
@@ -16,6 +16,12 @@ describe('makeStore', () => {
     const store = makeStore();
 
     expect(store.getState()).toHaveProperty(UI_REDUCER_PATH);
+  });
+
+  it('mounts the team reducer in the state', () => {
+    const store = makeStore();
+
+    expect(store.getState()).toHaveProperty(TEAM_REDUCER_PATH);
   });
 
   it('does not warn about serializability when redux-persist dispatches PERSIST', () => {

@@ -7,6 +7,7 @@ import PokemonGridSkeleton from 'src/features/pokemon-list/components/PokemonGri
 import { APP_TITLE } from 'src/shared/lib/constants/app.js';
 import AppHeader from 'src/shared/ui/AppHeader/AppHeader.jsx';
 import PageLayout from 'src/shared/ui/PageLayout/PageLayout.jsx';
+import ToastProvider from 'src/shared/ui/ToastProvider/ToastProvider.jsx';
 import { GlobalStyle } from 'src/shared/styles/GlobalStyle.js';
 import { theme } from 'src/shared/styles/theme.js';
 
@@ -19,19 +20,21 @@ const Providers = ({ children }) => (
         rehidrata, y el fallback se renderiza con los margenes que trae el browser. */}
     <GlobalStyle />
     <Provider store={store}>
-      <PersistGate
-        persistor={persistor}
-        loading={
-          <>
-            <AppHeader>{APP_TITLE}</AppHeader>
-            <PageLayout>
-              <PokemonGridSkeleton />
-            </PageLayout>
-          </>
-        }
-      >
-        {children}
-      </PersistGate>
+      <ToastProvider>
+        <PersistGate
+          persistor={persistor}
+          loading={
+            <>
+              <AppHeader>{APP_TITLE}</AppHeader>
+              <PageLayout>
+                <PokemonGridSkeleton />
+              </PageLayout>
+            </>
+          }
+        >
+          {children}
+        </PersistGate>
+      </ToastProvider>
     </Provider>
   </ThemeProvider>
 );
