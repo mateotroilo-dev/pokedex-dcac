@@ -19,8 +19,11 @@ const teamSlice = createSlice({
     },
     moveTeamMember: (state, action) => {
       const { from, to } = action.payload;
+      if (from < 0 || from >= state.ids.length) return;
+
+      const clampedTo = Math.min(Math.max(to, 0), state.ids.length - 1);
       const [moved] = state.ids.splice(from, 1);
-      state.ids.splice(to, 0, moved);
+      state.ids.splice(clampedTo, 0, moved);
     },
   },
 });
