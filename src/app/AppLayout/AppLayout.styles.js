@@ -1,7 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import styled from 'styled-components';
 
-export const TeamLink = styled(NavLink)`
+export const Nav = styled.nav`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+`;
+
+export const HeaderNavLink = styled(NavLink)`
   color: inherit;
   text-decoration: none;
   font-weight: 600;

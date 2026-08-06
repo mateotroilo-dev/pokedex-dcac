@@ -3,7 +3,7 @@ import { KEY_PREFIX } from 'redux-persist';
 import { server } from 'test/msw/server.js';
 import store from 'src/app/store.js';
 import { persistor } from 'src/app/persistor.js';
-import { pokemonListApi } from 'src/features/pokemon-list/api.js';
+import { pokemonApi } from 'src/services/pokemonApi.js';
 import { addToTeam } from 'src/features/team/teamSlice.js';
 import {
   BASE_API_REDUCER_PATH,
@@ -11,7 +11,7 @@ import {
   POKEMON_TAG_TYPE,
 } from 'src/shared/lib/constants/api.js';
 import { TEAM_REDUCER_PATH, UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
-import { POKEMON_INDEX_TAG_ID } from 'src/features/pokemon-list/constants.js';
+import { POKEMON_INDEX_TAG_ID } from 'src/shared/lib/constants/pokemon.js';
 import {
   API_PERSIST_KEY,
   ROOT_PERSIST_KEY,
@@ -42,7 +42,7 @@ describe('persistor', () => {
     );
     await whenBootstrapped(persistor);
 
-    await store.dispatch(pokemonListApi.endpoints.getPokemonIndex.initiate());
+    await store.dispatch(pokemonApi.endpoints.getPokemonIndex.initiate());
 
     const persistedApi = await vi.waitFor(
       () => {
@@ -84,7 +84,7 @@ describe('persistor', () => {
 
     const { default: nextStore } = await import('src/app/store.js');
     const { persistor: nextPersistor } = await import('src/app/persistor.js');
-    const { pokemonListApi: nextApi } = await import('src/features/pokemon-list/api.js');
+    const { pokemonApi: nextApi } = await import('src/services/pokemonApi.js');
     await whenBootstrapped(nextPersistor);
 
     const state = nextStore.getState();

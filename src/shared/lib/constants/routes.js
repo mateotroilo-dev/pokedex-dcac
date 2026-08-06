@@ -4,5 +4,6 @@ export const ROUTES = Object.freeze({
   HOME: '/',
   POKEMON_DETAIL: `/pokemon/:${POKEMON_ID_PARAM}`,
   TEAM: '/team',
+  COMPARE: '/compare',
   NOT_FOUND: '*',
 });

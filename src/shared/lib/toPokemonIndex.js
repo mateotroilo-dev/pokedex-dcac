@@ -1,4 +1,4 @@
-import { MAX_NATIONAL_DEX_ID } from 'src/features/pokemon-list/constants.js';
+import { MAX_NATIONAL_DEX_ID } from 'src/shared/lib/constants/pokemon.js';
 import { idFromApiUrl } from 'src/shared/lib/idFromApiUrl.js';
 
 export const toPokemonIndex = (results) =>

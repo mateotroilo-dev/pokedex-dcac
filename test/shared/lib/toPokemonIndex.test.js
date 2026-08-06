@@ -1,5 +1,5 @@
-import { toPokemonIndex } from 'src/features/pokemon-list/lib/toPokemonIndex.js';
-import { MAX_NATIONAL_DEX_ID } from 'src/features/pokemon-list/constants.js';
+import { toPokemonIndex } from 'src/shared/lib/toPokemonIndex.js';
+import { MAX_NATIONAL_DEX_ID } from 'src/shared/lib/constants/pokemon.js';
 import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
 
 describe('toPokemonIndex', () => {
