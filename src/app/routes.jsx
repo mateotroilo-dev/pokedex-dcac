@@ -27,6 +27,13 @@ export const routes = [
         },
       },
       {
+        path: ROUTES.COMPARE,
+        lazy: async () => {
+          const { default: ComparePage } = await import('src/pages/ComparePage/ComparePage.jsx');
+          return { Component: ComparePage };
+        },
+      },
+      {
         path: ROUTES.NOT_FOUND,
         lazy: async () => {
           const { default: NotFoundPage } = await import('src/pages/NotFoundPage/NotFoundPage.jsx');

@@ -10,3 +10,5 @@ export const STAT_LABELS = Object.freeze({
   'special-defense': 'Def. Esp.',
   speed: 'Velocidad',
 });
+
+export const TOTAL_LABEL = 'Total';

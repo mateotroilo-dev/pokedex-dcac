@@ -22,9 +22,17 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > y link a home, una página para rutas inexistentes y otra para errores no manejados, y **Mi
 > Equipo** —hasta 6 pokémon persistidos en `localStorage`, con un botón de agregar/quitar en el
 > detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en el header, y toasts
-> que avisan al agregar, al quitar y al intentar un séptimo—. Falta el filtro por stats y la
-> comparación. Este README describe únicamente lo que ya existe en el código; se amplía a medida
-> que cada parte se implementa.
+> que avisan al agregar, al quitar y al intentar un séptimo—, y **la comparación** —`/compare`, con
+> su propio link en el header: un formulario con Formik + Yup y un combobox propio que filtra sobre
+> las 1025 entradas del índice para elegir dos pokémon, que al enviarse quedan en la URL
+> (`?a=&b=`) y se muestran enfrentados con sprite, número, nombre y tipos, un radar en SVG propio
+> con las seis stats de cada uno, y una tabla accesible con esas mismas stats, el total y el
+> ganador de cada fila marcado con texto además de color—, y **conexión y frescura de datos** —un
+> indicador en el header que muestra si hay conexión, visible siempre, y, en el listado y el
+> detalle, hace cuánto se trajo el dato que está en pantalla, si viene de `localStorage` en vez de
+> la red, y un botón para refrescarlo a mano que queda deshabilitado sin conexión—. Falta el filtro
+> por stats. Este README describe únicamente lo que ya existe en el código; se amplía a medida que
+> cada parte se implementa.
 
 ## Instalación y ejecución
 
@@ -168,9 +176,9 @@ inconsistencia: cada una tiene un motivo propio para quedar de un lado o del otr
 del `PersistGate`, con el chrome ya pintado y nada más que hacer mientras se espera. `ErrorPage` es
 eager **a propósito**, aunque no sea la ruta de entrada: es el `errorElement` de la raíz, así que
 corre en el peor momento posible —algo de la app ya falló—, y un chunk que todavía no bajó no puede
-ser quien reporte que algo salió mal. La página de 404, `PokemonDetailPage` y `TeamPage` sí son
+ser quien reporte que algo salió mal. La página de 404, `PokemonDetailPage`, `TeamPage` y `ComparePage` sí son
 `lazy`: ninguna es la ruta de entrada, ninguna corre en un momento crítico, y el patrón que dejó
-puesto la 404 es el que usa el resto de las rutas de producto, incluida la comparación que falta.
+puesto la 404 es el que usa el resto de las rutas de producto.
 
 ### `eslint-config-prettier` va último en el array
 
@@ -326,6 +334,70 @@ feature nunca importa de otra). El detalle es una página, y las páginas son el
 contrato permite componer dos features. El costo aceptado es que armar un equipo completo pide abrir
 cada pokémon uno por uno desde el listado; si eso resulta insufrible en el uso real, la salida es un
 slot que `PokemonListPage` le pase a `PokemonGrid`, nunca un import cruzado entre features.
+
+### La selección de la comparación vive en la URL, no en un slice
+
+`/compare?a=25&b=6` sigue la misma regla que ya rige los filtros del listado: lo que el usuario
+eligió para ver una pantalla es estado de navegación, no estado de aplicación. Guardarlo en un slice
+—o en `useState`— lo perdería al recargar y lo haría imposible de compartir por link; guardarlo en la
+URL hace que compartir la comparación sea copiar la barra de direcciones, y que el botón atrás
+deshaga una elección como deshace cualquier otra navegación. `useComparisonSelection` solo lee y
+escribe esos dos parámetros.
+
+### El combobox de la comparación se escribió a mano, no con el `<select>` nativo de los filtros
+
+Los filtros del listado usan `<select>` porque eligen entre un puñado de tipos o generaciones —18 y
+menos de 10 opciones—, donde el control nativo alcanza. Elegir un pokémon entre 1025 es un problema
+distinto: hace falta poder escribir para filtrar mientras se elige, y ningún `<select>` nativo lo
+hace. `SearchableSelect` es un combobox ARIA propio —input con `role="combobox"`, lista con
+`role="listbox"`/`role="option"`, navegación por teclado y filtrado en memoria sobre el índice que ya
+está en cache—, no una variante del `Select` de los filtros: unificarlos habría sido forzar un mismo
+componente a servir a dos problemas distintos con una prop que decide cuál de los dos es.
+
+### El radar es SVG propio, no una librería de charts
+
+Es el único gráfico de todo el proyecto —un polígono por pokémon sobre seis ejes— y elegir una
+librería de charts para eso suma una dependencia con sus propios peers contra React 18 por cuatro
+operaciones de trigonometría (`RadarChart` calcula la posición de cada vértice con seno y coseno
+sobre el ángulo de cada eje). Es el mismo criterio que ya se usó en la ilustración de `EmptyState`:
+cero assets, cero requests, y el color sale del `theme` en vez de una paleta propia de la librería.
+La tabla de stats sigue siendo la fuente de verdad accesible; el radar es un complemento visual, así
+que el SVG no repite los números adentro —esa alternativa textual ya la da la tabla— y **las
+barras de stats siguen escalando contra 255** por el mismo motivo de arriba: el radar usa el mismo
+`max` que `PokemonStatBar`, así que la forma de dos pokémon comparados también es comparable contra
+el resto de la dex, no solo entre ellos dos.
+
+### La frescura se mide contra `hydratedAt`, no contra un TTL inventado
+
+Un dato "fresco" no es el que tiene menos de N minutos: es el que se trajo en _esta_ sesión.
+`uiSlice` ya escribía `hydratedAt` en el `REHYDRATE` desde la slice 2a sin que nadie lo leyera;
+`DataFreshnessIndicator` compara el `fulfilledTimeStamp` de la query reportada contra ese valor
+—anterior significa que salió de `localStorage`, no de la red— y con `hydratedAt` en `null`
+(primera visita, disco vacío) todo es fresco por definición. Un TTL fijo mentiría igual de rápido
+para un dato recién rehidratado que para uno recién pedido.
+
+### La frescura viaja por contexto, no por el store
+
+El header no sabe qué query alimenta la pantalla que se está mirando —es `/pokemon/:id` o el
+listado con sus filtros— y no le corresponde adivinarlo. `FreshnessProvider` guarda lo último que
+reportó la página (`fulfilledTimeStamp`, `isFetching`, tags) y `useDataFreshness` es el lado que
+escribe, con un `useEffect` que limpia a `null` al desmontar: salir del detalle no puede dejar al
+header anunciando la edad de un pokémon que ya no está en pantalla. No es un slice porque no es
+estado de aplicación —nace y muere con la navegación—, y no es prop drilling porque el header y la
+página son ramas hermanas del layout: el mismo patrón que ya usa `ToastProvider`.
+
+### El refresco es manual, y solo invalida los tags de lo que está en pantalla
+
+PokeAPI es de solo lectura: no hay mutation que dispare una invalidación sola, así que alguien
+tiene que pedirla. Automatizarla al reconectar dispararía el refetch justo cuando la red recién
+vuelve, sin que nadie lo haya pedido; el botón de `DataFreshnessIndicator` deja esa decisión —y el
+gasto de red— donde se puede ver, y solo funciona con conexión (`useOnlineStatus`, sobre
+`useSyncExternalStore` y los eventos `online`/`offline` de `window`). Invalida los tags que reportó
+la página, no el tipo `Pokemon` entero: con el tipo completo, un click en el detalle se llevaría
+puestos los `getPokemonById` que sembró la grilla y lo que alimenta `/team` y `/compare` —el cache
+en disco que sostiene el offline de la app—. Acotado a la query en pantalla, lo único que se pierde
+es la entrada del listado que comparte ese mismo id, que se vuelve a pedir sola la próxima vez que
+aparezca.
 
 ## Mejoras futuras identificadas
 

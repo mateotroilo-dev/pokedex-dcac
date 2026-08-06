@@ -1,30 +1,18 @@
 import { baseApi } from 'src/services/baseApi.js';
-// No solo el tipo: importar pokemonApi es lo que inyecta su endpoint. Sin esta importacion
-// 'getPokemonById' no existe todavia y el upsert de abajo no apunta a ninguna entrada de cache.
+// No solo el tipo: importar pokemonApi es lo que inyecta sus endpoints. Sin esta importacion
+// 'getPokemonById' y 'getPokemonIndex' no existen todavia y las llamadas de abajo no apuntan a
+// ninguna entrada de cache.
 import { pokemonApi } from 'src/services/pokemonApi.js';
 import { POKEMON_TAG_TYPE } from 'src/shared/lib/constants/api.js';
 import { idFromApiUrl } from 'src/shared/lib/idFromApiUrl.js';
 import { limitConcurrency } from 'src/shared/lib/limitConcurrency.js';
 import { parseApiError } from 'src/shared/lib/parseApiError.js';
 import { toPokemon } from 'src/shared/lib/toPokemon.js';
-import {
-  INDEX_REQUEST_LIMIT,
-  MAX_CONCURRENT_DETAIL_REQUESTS,
-  PAGE_SIZE,
-  POKEMON_INDEX_TAG_ID,
-} from 'src/features/pokemon-list/constants.js';
-import { toPokemonIndex } from 'src/features/pokemon-list/lib/toPokemonIndex.js';
+import { MAX_CONCURRENT_DETAIL_REQUESTS, PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import { filterPokemonIndex } from 'src/features/pokemon-list/lib/filterPokemonIndex.js';
 
 export const pokemonListApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getPokemonIndex: build.query({
-      query: () => `pokemon?limit=${INDEX_REQUEST_LIMIT}`,
-      transformResponse: ({ results }) => toPokemonIndex(results),
-      transformErrorResponse: parseApiError,
-      providesTags: [{ type: POKEMON_TAG_TYPE, id: POKEMON_INDEX_TAG_ID }],
-    }),
-
     getPokemonPage: build.infiniteQuery({
       infiniteQueryOptions: {
         initialPageParam: 0,
@@ -40,7 +28,7 @@ export const pokemonListApi = baseApi.injectEndpoints({
       queryFn: async ({ queryArg, pageParam }, { dispatch }, extraOptions, baseQuery) => {
         const { term, type, generation } = queryArg ?? {};
 
-        const indexQuery = dispatch(pokemonListApi.endpoints.getPokemonIndex.initiate());
+        const indexQuery = dispatch(pokemonApi.endpoints.getPokemonIndex.initiate());
         const typeQuery = type && dispatch(pokemonListApi.endpoints.getIdsByType.initiate(type));
         const generationQuery =
           generation && dispatch(pokemonListApi.endpoints.getIdsByGeneration.initiate(generation));
@@ -119,9 +107,5 @@ export const pokemonListApi = baseApi.injectEndpoints({
   }),
 });
 
-export const {
-  useGetPokemonIndexQuery,
-  useGetPokemonPageInfiniteQuery,
-  useGetIdsByTypeQuery,
-  useGetIdsByGenerationQuery,
-} = pokemonListApi;
+export const { useGetPokemonPageInfiniteQuery, useGetIdsByTypeQuery, useGetIdsByGenerationQuery } =
+  pokemonListApi;

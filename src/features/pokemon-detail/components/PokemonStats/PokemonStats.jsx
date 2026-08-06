@@ -1,10 +1,7 @@
 import PokemonStatBar from 'src/features/pokemon-detail/components/PokemonStatBar/PokemonStatBar.jsx';
 import PokemonStatTotal from 'src/features/pokemon-detail/components/PokemonStatTotal/PokemonStatTotal.jsx';
 import { POKEMON_TYPE_COLORS } from 'src/shared/styles/pokemonTypes.js';
-import {
-  MAX_BASE_STAT,
-  STAT_LABELS,
-} from 'src/features/pokemon-detail/components/PokemonStats/PokemonStats.constants.js';
+import { MAX_BASE_STAT, STAT_LABELS } from 'src/shared/lib/constants/stats.js';
 import {
   List,
   Wrapper,

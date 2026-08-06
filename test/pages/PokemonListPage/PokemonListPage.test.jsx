@@ -1,7 +1,9 @@
 import { http, HttpResponse } from 'msw';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import AppLayout from 'src/app/AppLayout/AppLayout.jsx';
 import PokemonListPage from 'src/pages/PokemonListPage/PokemonListPage.jsx';
+import { CACHED_LABEL } from 'src/features/connection/components/DataFreshnessIndicator/DataFreshnessIndicator.constants.js';
 import { POKEAPI_BASE_URL } from 'src/shared/lib/constants/api.js';
 import { PAGE_SIZE } from 'src/features/pokemon-list/constants.js';
 import { RETRY_LABEL } from 'src/shared/ui/ErrorState/ErrorState.constants.js';
@@ -13,6 +15,7 @@ import {
   NO_SEARCH_RESULTS_MESSAGE,
 } from 'src/pages/PokemonListPage/PokemonListPage.constants.js';
 import { SENTINEL_TEST_ID } from 'src/shared/ui/InfiniteScrollSentinel/InfiniteScrollSentinel.constants.js';
+import { UI_REDUCER_PATH } from 'src/shared/lib/constants/store.js';
 import { pokemonDetailResponse } from 'test/msw/fixtures/pokemonDetailResponse.js';
 import { pokemonIndexResponse } from 'test/msw/fixtures/pokemonIndexResponse.js';
 import { createPokemonIndexResponse } from 'test/msw/fixtures/createPokemonIndexResponse.js';
@@ -372,5 +375,29 @@ describe('PokemonListPage', () => {
 
     await screen.findByRole('heading', { name: 'bulbasaur' });
     expect(screen.getAllByRole('link')).toHaveLength(5);
+  });
+
+  it('reports its freshness to the header, which shows the page as cached when it hydrated after the fetch', async () => {
+    server.use(indexHandler(), detailHandler(), typesHandler(), generationsHandler());
+
+    // La pagina sola no trae header (ver renderIndicator en los otros tests de esta suite): hay que
+    // montar la ruta con AppLayout, que es quien la envuelve en el FreshnessProvider real. El
+    // hydratedAt "de disco" se simula mas adelante que el fetch en vivo de MSW, que es la misma
+    // relacion de orden que produce una sesion que rehidrato despues de haber cacheado el dato.
+    renderWithProviders(null, {
+      routes: [
+        {
+          path: '/',
+          element: <AppLayout />,
+          children: [{ index: true, element: <PokemonListPage /> }],
+        },
+      ],
+      initialEntries: ['/'],
+      preloadedState: { [UI_REDUCER_PATH]: { hydratedAt: Date.now() + 60_000 } },
+    });
+
+    await findFirstCardName();
+
+    expect(await screen.findByText(new RegExp(CACHED_LABEL))).toBeInTheDocument();
   });
 });
