@@ -45,6 +45,30 @@ describe('teamSlice', () => {
 
     expect(state.ids).toEqual([2, 3, 1]);
   });
+
+  it('clamps a `to` past the end of the team to the last position', () => {
+    const state = teamReducer({ ids: [1, 2, 3] }, moveTeamMember({ from: 0, to: 99 }));
+
+    expect(state.ids).toEqual([2, 3, 1]);
+  });
+
+  it('clamps a negative `to` to the first position', () => {
+    const state = teamReducer({ ids: [1, 2, 3] }, moveTeamMember({ from: 2, to: -99 }));
+
+    expect(state.ids).toEqual([3, 1, 2]);
+  });
+
+  it('does nothing when `from` is out of range', () => {
+    const state = teamReducer({ ids: [1, 2, 3] }, moveTeamMember({ from: 99, to: 0 }));
+
+    expect(state.ids).toEqual([1, 2, 3]);
+  });
+
+  it('does nothing when `from` is negative', () => {
+    const state = teamReducer({ ids: [1, 2, 3] }, moveTeamMember({ from: -1, to: 0 }));
+
+    expect(state.ids).toEqual([1, 2, 3]);
+  });
 });
 
 describe('selectTeamIds', () => {

@@ -21,8 +21,10 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > GitHub Actions y demo desplegada en Vercel, el **router con su chrome propio**: layout con header
 > y link a home, una página para rutas inexistentes y otra para errores no manejados, y **Mi
 > Equipo** —hasta 6 pokémon persistidos en `localStorage`, con un botón de agregar/quitar en el
-> detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en el header, y toasts
-> que avisan al agregar, al quitar y al intentar un séptimo—, y **la comparación** —`/compare`, con
+> detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en el header, toasts
+> que avisan al agregar, al quitar y al intentar un séptimo, y reordenar el equipo con botones de
+> anterior/siguiente por card, cada una con su posición marcada y accesible por teclado sin perder
+> el foco—, y **la comparación** —`/compare`, con
 > su propio link en el header: un formulario con Formik + Yup y un combobox propio que filtra sobre
 > las 1025 entradas del índice para elegir dos pokémon, que al enviarse quedan en la URL
 > (`?a=&b=`) y se muestran enfrentados con sprite, número, nombre y tipos, un radar en SVG propio
@@ -30,9 +32,9 @@ Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](h
 > ganador de cada fila marcado con texto además de color—, y **conexión y frescura de datos** —un
 > indicador en el header que muestra si hay conexión, visible siempre, y, en el listado y el
 > detalle, hace cuánto se trajo el dato que está en pantalla, si viene de `localStorage` en vez de
-> la red, y un botón para refrescarlo a mano que queda deshabilitado sin conexión—. Falta el filtro
-> por stats. Este README describe únicamente lo que ya existe en el código; se amplía a medida que
-> cada parte se implementa.
+> la red, y un botón para refrescarlo a mano que queda deshabilitado sin conexión—. Este README
+> describe únicamente lo que ya existe en el código; se amplía a medida que cada parte se
+> implementa.
 
 ## Instalación y ejecución
 
@@ -399,6 +401,21 @@ en disco que sostiene el offline de la app—. Acotado a la query en pantalla, l
 es la entrada del listado que comparte ese mismo id, que se vuelve a pedir sola la próxima vez que
 aparezca.
 
+### El equipo se reordena con botones «anterior/siguiente», no con drag & drop
+
+El enunciado marca el arrastre como opcional entre paréntesis, y de todos modos exigiría igual la
+alternativa por teclado: sumar una librería de drag & drop no ahorra el trabajo, lo duplica. Cada
+card de `/team` suma un botón «anterior» y uno «siguiente» en vez de «subir/bajar»: la grilla es CSS
+grid responsive, así que en dos columnas "anterior" cae a la izquierda y "subir" sería falso en la
+mayoría de los anchos. Los botones se deshabilitan en los extremos y, si el que se acaba de clickear
+queda deshabilitado, el foco pasa al hermano — sin eso, mover algo a la última posición deja el foco
+en el `body` y rompe el recorrido por teclado justo para quien no usa el mouse.
+
+Que el orden sea visible también le da sentido al límite de 6 pokémon "como en los juegos": la
+posición 1 es el líder del equipo. Cada card muestra un badge con su posición (1..6), y moverla lo
+anuncia por una región `aria-live` silenciosa en vez de un toast — reordenar son varios clicks
+seguidos para una sola operación mental, y un toast por click apilaría cuatro o cinco de una.
+
 ## Mejoras futuras identificadas
 
 - **Filtro por más de un tipo a la vez** (fuego + volador). El `<select>` nativo de un solo valor no
@@ -421,3 +438,8 @@ aparezca.
   (GHSA-67mh-4wv8-2f99). El fix es Vite 8, que rompe la restricción de stack del challenge. Solo
   afecta al servidor de desarrollo, no al build de producción, y se resuelve cuando se pueda subir de
   major.
+- **Offline real (PWA).** El enunciado no menciona service worker, manifest ni "instalable" en
+  ninguna parte; el offline que sí pide —persistencia con `redux-persist`— está desde el principio
+  del proyecto. Un service worker en la demo ayudaría a quien evalúa un build viejo que le quedó
+  cacheado y no tiene forma de pedirle un hard-reload, pero eso es riesgo real contra cero puntos
+  del enunciado.
