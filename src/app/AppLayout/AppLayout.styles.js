@@ -9,7 +9,9 @@ export const Nav = styled.nav`
 
 export const StatusGroup = styled.div`
   display: flex;
+  flex: 1 1 0;
   align-items: center;
+  justify-content: flex-end;
   gap: ${({ theme }) => theme.spacing.md};
 `;
 

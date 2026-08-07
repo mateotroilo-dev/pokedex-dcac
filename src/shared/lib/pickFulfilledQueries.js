@@ -23,10 +23,6 @@ const prunedProvided = (provided, keptCacheKeys) => ({
   ),
 });
 
-// `provided` se conserva podado en vez de descartarse: `invalidateTags` resuelve a que entrada de
-// cache le pega leyendo de ahi, asi que sin esto la invalidacion no tiene efecto justo en la sesion
-// que arranca desde el cache rehidratado, y no falla en ningun otro lado.
-//
 // `isPersistable` es donde entra la regla con dominio: esta funcion solo sabe de "fulfilled" (una
 // query pending o rejected rehidrata stuck para siempre, eso no es negociable) y de que el podado
 // de `provided` tiene que correr contra el mismo conjunto de queries que sobrevive.

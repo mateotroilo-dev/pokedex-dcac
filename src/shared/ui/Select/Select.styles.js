@@ -18,4 +18,5 @@ export const Control = styled.select`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
   font-size: ${({ theme }) => theme.fontSizes.md};
+  text-transform: capitalize;
 `;

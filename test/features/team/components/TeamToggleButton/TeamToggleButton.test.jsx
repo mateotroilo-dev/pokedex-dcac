@@ -21,7 +21,7 @@ describe('TeamToggleButton', () => {
     await user.click(screen.getByRole('button', { name: ADD_TO_TEAM_LABEL }));
 
     expect(store.getState()[TEAM_REDUCER_PATH].ids).toEqual([1]);
-    expect(screen.getByText('bulbasaur se agregó al equipo')).toBeInTheDocument();
+    expect(screen.getByText('Bulbasaur se agregó al equipo')).toBeInTheDocument();
   });
 
   it('removes the pokemon from the team and shows a toast', async () => {
@@ -33,7 +33,7 @@ describe('TeamToggleButton', () => {
     await user.click(screen.getByRole('button', { name: REMOVE_FROM_TEAM_LABEL }));
 
     expect(store.getState()[TEAM_REDUCER_PATH].ids).toEqual([]);
-    expect(screen.getByText('bulbasaur se quitó del equipo')).toBeInTheDocument();
+    expect(screen.getByText('Bulbasaur se quitó del equipo')).toBeInTheDocument();
   });
 
   it('does not add a 7th pokemon and warns that the team is full', async () => {

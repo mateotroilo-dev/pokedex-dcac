@@ -7,7 +7,7 @@ import { APP_TITLE } from 'src/shared/lib/constants/app.js';
 import { ERROR_MESSAGE } from 'src/pages/ErrorPage/ErrorPage.constants.js';
 
 // errorElement de la ruta raiz: reemplaza a AppLayout entero en vez de convivir con el, asi que
-// monta su propio AppHeader en lugar de heredarlo (ver Contexto del plan de slice 5).
+// monta su propio AppHeader en lugar de heredarlo.
 const ErrorPage = () => {
   const error = useRouteError();
   const message = isRouteErrorResponse(error)

@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'src/shared/ui/Button/Button.jsx';
 import { useToast } from 'src/shared/hooks/useToast.js';
+import { POKEMON_TYPE_COLORS } from 'src/shared/styles/pokemonTypes.js';
 import {
   addToTeam,
   removeFromTeam,
@@ -20,6 +21,7 @@ const TeamToggleButton = ({ pokemon }) => {
   const showToast = useToast();
   const isInTeam = useSelector((state) => selectIsInTeam(state, pokemon.id));
   const isTeamFull = useSelector(selectIsTeamFull);
+  const color = POKEMON_TYPE_COLORS[pokemon.types?.[0]];
 
   const handleClick = () => {
     if (isInTeam) {
@@ -40,7 +42,9 @@ const TeamToggleButton = ({ pokemon }) => {
   // No se deshabilita con el equipo lleno: un boton disabled no dispara click, y el toast del
   // limite -el unico lugar que explica la regla de los 6- no aparecería nunca.
   return (
-    <Button onClick={handleClick}>{isInTeam ? REMOVE_FROM_TEAM_LABEL : ADD_TO_TEAM_LABEL}</Button>
+    <Button onClick={handleClick} size="sm" background={color} style={{ alignSelf: 'center' }}>
+      {isInTeam ? REMOVE_FROM_TEAM_LABEL : ADD_TO_TEAM_LABEL}
+    </Button>
   );
 };
 

@@ -14,6 +14,7 @@ export const Header = styled.header`
 `;
 
 export const Title = styled.h1`
+  flex: 1 1 0;
   font-size: ${({ theme }) => theme.fontSizes.xl};
 
   a {

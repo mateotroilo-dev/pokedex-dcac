@@ -6,35 +6,50 @@
 
 Challenge técnico de De Campo a Campo: una Pokedex construida sobre [PokeAPI](https://pokeapi.co/).
 
-> **Estado actual:** están el piso de tooling (build, linting, formato, pre-commit), el harness de
-> testing, la capa de datos (endpoints contra PokeAPI, cache y persistencia), **la primera
-> pantalla** —el listado muestra la página inicial de pokémon con su sprite, número, nombre y tipos,
-> con skeletons mientras carga, scroll infinito que sigue trayendo páginas al llegar al fondo, un
-> botón de reintentar si una request falla, y un buscador por nombre o número más selects de tipo y
-> generación, combinables entre sí y con la búsqueda, que filtran la dex completa sin perder la
-> posición en el historial—, **el detalle** —`/pokemon/:id` abre desde
-> cualquier card del listado sin volver a pedir nada, y por URL directa muestra una galería con los
-> sprites que la entrada tenga (ilustración oficial, frente, espalda y variocolor), elegibles desde
-> una tira de miniaturas, más número, nombre y tipos, las seis stats base con una barra cada una, la
-> suma total, altura, peso y habilidades, con su propio skeleton y una distinción entre "no existe"
-> (sin reintento) y un fallo cualquiera (con reintento)—, la **red de CI y deploy**: workflow de
-> GitHub Actions y demo desplegada en Vercel, el **router con su chrome propio**: layout con header
-> y link a home, una página para rutas inexistentes y otra para errores no manejados, y **Mi
-> Equipo** —hasta 6 pokémon persistidos en `localStorage`, con un botón de agregar/quitar en el
-> detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en el header, toasts
-> que avisan al agregar, al quitar y al intentar un séptimo, y reordenar el equipo con botones de
-> anterior/siguiente por card, cada una con su posición marcada y accesible por teclado sin perder
-> el foco—, y **la comparación** —`/compare`, con
-> su propio link en el header: un formulario con Formik + Yup y un combobox propio que filtra sobre
-> las 1025 entradas del índice para elegir dos pokémon, que al enviarse quedan en la URL
-> (`?a=&b=`) y se muestran enfrentados con sprite, número, nombre y tipos, un radar en SVG propio
-> con las seis stats de cada uno, y una tabla accesible con esas mismas stats, el total y el
-> ganador de cada fila marcado con texto además de color—, y **conexión y frescura de datos** —un
-> indicador en el header que muestra si hay conexión, visible siempre, y, en el listado y el
-> detalle, hace cuánto se trajo el dato que está en pantalla, si viene de `localStorage` en vez de
-> la red, y un botón para refrescarlo a mano que queda deshabilitado sin conexión—. Este README
-> describe únicamente lo que ya existe en el código; se amplía a medida que cada parte se
-> implementa.
+## Funcionalidad
+
+Mapeado 1:1 a los 7 requerimientos funcionales de `challenge-tecnico.pdf`, en su mismo orden, porque
+es como se lee este README junto al enunciado.
+
+1. **Listado principal de pokémon.** Scroll infinito que trae la página siguiente al llegar al
+   fondo, con skeletons del mismo tamaño que las cards mientras carga y un botón de reintentar si
+   una request falla. Cada card muestra sprite (con `ProgressiveImage`, oculto sobre su skeleton
+   hasta que carga), número, nombre y tipos con sus badges de color.
+2. **Vista de detalle.** `/pokemon/:id` abre desde cualquier card sin volver a pedir nada, y por URL
+   directa muestra una galería con los sprites que la entrada tenga (ilustración oficial, frente,
+   espalda y variocolor) elegibles desde una tira de miniaturas, las seis stats base con una barra
+   cada una y su suma total, tipos, habilidades, altura y peso. Distingue "no existe" (sin
+   reintento) de un fallo cualquiera (con reintento).
+3. **Buscador y filtros.** Buscador por nombre o número con debounce de 300 ms
+   (`SEARCH_DEBOUNCE_MS`), más selects de tipo y generación, combinables entre sí y con la
+   búsqueda. Los tres criterios viven en query params (`usePokemonFilters`), así que una búsqueda
+   filtrada se comparte copiando la URL.
+4. **Mi Equipo (favoritos).** Hasta 6 pokémon persistidos en `localStorage`, con un botón de
+   agregar/quitar en el detalle, la ruta `/team` con su propia grilla y su estado vacío, un link en
+   el header, y toasts que avisan al agregar, al quitar y al intentar un séptimo. El reordenamiento
+   pedido es por botones de anterior/siguiente, no drag & drop (opcional en el enunciado; ver
+   "El equipo se reordena con botones «anterior/siguiente»" más abajo).
+5. **Formulario de comparación.** `/compare`, con su propio link en el header: un formulario con
+   Formik + Yup —valida que no se elija el mismo pokémon dos veces— y un combobox propio
+   (`SearchableSelect`) que filtra sobre las 1025 entradas del índice para elegir cada pokémon. Al
+   enviarse la selección queda en la URL (`?a=&b=`) y se muestra un radar en SVG propio con las
+   seis stats de cada uno más una tabla accesible con esas mismas stats, el total y el ganador de
+   cada fila marcado con texto además de color.
+6. **Manejo de datos con RTK Query.** `createApi` con endpoints para índice, página del listado,
+   detalle, tipos y generaciones; cache automático con `keepUnusedDataFor` de 24 h (los datos son
+   inmutables) e invalidación por tags disparada a mano desde el botón de refresco. El cache
+   persiste con `redux-persist` y sobrevive al refresh; el equipo vive en un slice separado,
+   también persistido. Un indicador en el header muestra si hay conexión, y en el listado y el
+   detalle, hace cuánto se trajo el dato en pantalla y si viene de `localStorage` en vez de la red
+   (ver "Cache y persistencia" y "La frescura se mide contra `hydratedAt`" más abajo).
+7. **Experiencia de usuario y manejo de errores.** Skeletons en listado y detalle, toasts en las
+   acciones del equipo, estados vacíos con ilustración (sin resultados, equipo vacío), botón de
+   reintentar ante un fallo de red, y diseño responsive verificado a mano en 360/768/1280 px (ver
+   "Ningún `@media` propio" más abajo).
+
+La **red de CI y deploy** (workflow de GitHub Actions, demo en Vercel) y el **router con su chrome
+propio** (layout con header y link a home, página de 404, página de errores no manejados) no son
+uno de los 7 requerimientos: sostienen a los siete.
 
 ## Instalación y ejecución
 
@@ -416,6 +431,14 @@ posición 1 es el líder del equipo. Cada card muestra un badge con su posición
 anuncia por una región `aria-live` silenciosa en vez de un toast — reordenar son varios clicks
 seguidos para una sola operación mental, y un toast por click apilaría cuatro o cinco de una.
 
+### Ningún `@media` propio
+
+El responsive sale de layout fluido, no de breakpoints: `auto-fill` en `Grid` decide solas cuántas
+columnas entran, y `flex-wrap` en el header envuelve los links e indicadores cuando no hay ancho. La
+contracara, ya elegida antes de esta slice, es que ningún componente pregunta por el viewport — la
+verificación a mano en 360/768/1280 px de esta slice confirmó el enfoque en vez de forzar una
+excepción puntual.
+
 ## Mejoras futuras identificadas
 
 - **Filtro por más de un tipo a la vez** (fuego + volador). El `<select>` nativo de un solo valor no
@@ -443,3 +466,10 @@ seguidos para una sola operación mental, y un toast por click apilaría cuatro 
   del proyecto. Un service worker en la demo ayudaría a quien evalúa un build viejo que le quedó
   cacheado y no tiene forma de pedirle un hard-reload, pero eso es riesgo real contra cero puntos
   del enunciado.
+- **`App.jsx`, `main.jsx`, `providers.jsx`, `router.jsx` y `GlobalStyle.js` sin test propio.** Es la
+  única cobertura que falta y es deliberada, no un hueco: son bootstrap sin lógica de producto
+  (montan providers, arman el router, aplican el reset global), y `routes.test.jsx` ya ejercita
+  `router.jsx` de punta a punta a través de `createMemoryRouter`. Un test de humo ahí verificaría
+  que React monta React. `GlobalStyle.js` en particular no tiene ninguna forma de probarse: jsdom no
+  calcula estilos computados sobre un reset global, así que no hay aserción posible que no sea leer
+  el propio archivo.

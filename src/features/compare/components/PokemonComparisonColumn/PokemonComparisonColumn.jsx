@@ -12,7 +12,10 @@ import {
 const PokemonComparisonColumn = ({ pokemon }) => (
   <Wrapper>
     <ProgressiveImage
-      src={pokemon.sprites.front}
+      // Ilustracion oficial, no el sprite: acá hay a lo sumo 2 cards a la vez, asi que el peso
+      // extra frente al sprite no se nota como en la grilla del dex (ver el mismo comentario en
+      // PokemonCard.jsx).
+      src={pokemon.sprites.artwork}
       alt=""
       width={POKEMON_COMPARISON_SPRITE_SIZE}
       height={POKEMON_COMPARISON_SPRITE_SIZE}

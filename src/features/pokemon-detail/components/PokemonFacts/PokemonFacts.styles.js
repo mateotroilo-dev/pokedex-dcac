@@ -14,13 +14,3 @@ export const Term = styled.dt`
 export const Detail = styled.dd`
   font-size: ${({ theme }) => theme.fontSizes.sm};
 `;
-
-export const AbilityList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-export const AbilityItem = styled.li`
-  text-transform: capitalize;
-`;

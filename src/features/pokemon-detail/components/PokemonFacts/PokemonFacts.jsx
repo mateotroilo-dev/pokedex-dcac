@@ -1,13 +1,13 @@
+import { formatAbilityName } from 'src/features/pokemon-detail/lib/formatAbilityName.js';
 import { formatHeight } from 'src/features/pokemon-detail/lib/formatHeight.js';
 import { formatWeight } from 'src/features/pokemon-detail/lib/formatWeight.js';
 import {
   ABILITIES_LABEL,
+  ABILITY_SEPARATOR,
   HEIGHT_LABEL,
   WEIGHT_LABEL,
 } from 'src/features/pokemon-detail/components/PokemonFacts/PokemonFacts.constants.js';
 import {
-  AbilityItem,
-  AbilityList,
   Detail,
   List,
   Term,
@@ -20,13 +20,7 @@ const PokemonFacts = ({ pokemon }) => (
     <Term>{WEIGHT_LABEL}</Term>
     <Detail>{formatWeight(pokemon.weight)}</Detail>
     <Term>{ABILITIES_LABEL}</Term>
-    <Detail>
-      <AbilityList>
-        {pokemon.abilities.map((ability) => (
-          <AbilityItem key={ability}>{ability}</AbilityItem>
-        ))}
-      </AbilityList>
-    </Detail>
+    <Detail>{pokemon.abilities.map(formatAbilityName).join(ABILITY_SEPARATOR)}</Detail>
   </List>
 );
 

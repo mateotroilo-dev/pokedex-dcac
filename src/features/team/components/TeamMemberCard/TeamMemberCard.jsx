@@ -131,7 +131,10 @@ const TeamMemberCard = ({ id, index, total, onMove }) => {
       </Header>
       <DetailLink to={toPokemonDetailPath(data.id)}>
         <ProgressiveImage
-          src={data.sprites.front}
+          // Ilustracion oficial, no el sprite: acá hay a lo sumo 6 cards a la vez (el equipo
+          // completo), asi que el peso extra frente al sprite no se nota como en la grilla del
+          // dex (ver el mismo comentario en PokemonCard.jsx).
+          src={data.sprites.artwork}
           alt=""
           width={TEAM_MEMBER_CARD_SPRITE_SIZE}
           height={TEAM_MEMBER_CARD_SPRITE_SIZE}
