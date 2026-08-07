@@ -12,7 +12,7 @@ const PokemonTypeSelect = () => {
   const { type, setType } = usePokemonFilters();
 
   // Si la lista fallo o vino vacia, no hay opciones que ofrecer: el buscador y el listado siguen
-  // enteros en vez de un select muerto (ver Riesgos en el plan de la slice 8).
+  // enteros en vez de un select muerto.
   if (!options || options.length === 0) return null;
 
   // Un valor de la URL que no esta entre las opciones cae a la opcion vacia: si no, el select queda

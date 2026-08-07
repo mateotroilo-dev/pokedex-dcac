@@ -34,8 +34,8 @@ const DataFreshnessIndicator = () => {
 
   const handleRefresh = () => dispatch(baseApi.util.invalidateTags(tags));
 
-  // Sin setInterval a proposito (ver plan de la slice): la edad se recalcula sola en cada render
-  // que ya dispara otra cosa, y un tramo ancho no miente lo suficiente como para pagar un timer vivo.
+  // Sin setInterval a proposito: la edad se recalcula sola en cada render que ya dispara otra cosa,
+  // y un tramo ancho no miente lo suficiente como para pagar un timer vivo.
   // eslint-disable-next-line react-hooks/purity -- Date.now() en render es la decision, no un descuido.
   const label = formatDataAge(fulfilledTimeStamp, Date.now());
 

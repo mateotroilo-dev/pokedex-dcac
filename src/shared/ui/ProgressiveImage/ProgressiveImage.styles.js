@@ -6,8 +6,6 @@ export const Frame = styled.div`
   height: ${({ $height }) => $height ?? '100%'};
 `;
 
-// Absoluta sobre el skeleton, y oculta con opacity en vez de display: none. Una imagen
-// loading="lazy" fuera del layout no la pide el navegador, y el skeleton quedaria para siempre.
 export const Image = styled.img`
   position: absolute;
   inset: 0;

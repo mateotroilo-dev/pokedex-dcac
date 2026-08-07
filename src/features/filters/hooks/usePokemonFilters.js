@@ -49,7 +49,7 @@ const usePokemonFilters = () => {
   if (generation !== undefined) criteria.generation = generation;
 
   // undefined y no {} cuando no hay ningun criterio: es lo que sostiene la persistencia del listado
-  // sin filtros (ver invariante de la Tarea 3 en el plan de la slice 8).
+  // sin filtros.
   const filters = Object.keys(criteria).length > 0 ? criteria : undefined;
 
   return {

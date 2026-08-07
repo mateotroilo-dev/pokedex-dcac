@@ -1,5 +1,4 @@
-// La comparte PokemonSpriteGallery con el skeleton del detalle: si la imagen principal y su hueco
-// no miden igual, el layout salta cuando llegan los datos.
+// La comparte PokemonSpriteGallery con el skeleton del detalle.
 export const POKEMON_SPRITE_GALLERY_MAIN_SIZE = '200px';
 
 // PokeAPI devuelve height en decimetros y weight en hectogramos (height: 7, weight: 69 es
