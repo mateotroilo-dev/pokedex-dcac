@@ -19,6 +19,11 @@ const PokemonCard = ({ pokemon }) => (
     <ProgressiveImage
       // El nombre del pokemon ya lo aporta el heading de abajo: con alt, el link entero se
       // llamaria "bulbasaur #0001 bulbasaur grass poison" para el lector de pantalla.
+      //
+      // Sprite (96px, 2-5 KB) y no ilustracion oficial (475px+, 30-100+ KB) a proposito: esta
+      // grilla puede tener cientos de cards con scroll infinito, y la imagen se muestra a 96px
+      // de cualquier forma. La ilustracion se reserva para pantallas con pocas cards a la vez
+      // (equipo, comparador), donde el peso extra no se nota.
       src={pokemon.sprites.front}
       alt=""
       width={POKEMON_CARD_SPRITE_SIZE}

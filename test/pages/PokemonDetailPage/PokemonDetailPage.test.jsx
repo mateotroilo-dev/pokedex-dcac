@@ -36,7 +36,7 @@ describe('PokemonDetailPage', () => {
     expect(screen.getByText('poison')).toBeInTheDocument();
     expect(screen.getByText('0,7 m')).toBeInTheDocument();
     expect(screen.getByText('6,9 kg')).toBeInTheDocument();
-    expect(screen.getByText('overgrow')).toBeInTheDocument();
+    expect(screen.getByText('Overgrow — Chlorophyll')).toBeInTheDocument();
   });
 
   it('shows the team toggle once the pokemon comes back', async () => {

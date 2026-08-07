@@ -19,6 +19,7 @@ export const Input = styled.input`
   background-color: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.text};
   font-size: ${({ theme }) => theme.fontSizes.md};
+  text-transform: capitalize;
 
   &:disabled {
     opacity: 0.6;
@@ -47,6 +48,7 @@ export const Option = styled.li`
   padding: ${({ theme }) => `${theme.spacing.sm} ${theme.spacing.md}`};
   cursor: pointer;
   color: ${({ theme }) => theme.colors.text};
+  text-transform: capitalize;
   background-color: ${({ theme, $isActive }) =>
     $isActive ? theme.colors.background : 'transparent'};
 `;

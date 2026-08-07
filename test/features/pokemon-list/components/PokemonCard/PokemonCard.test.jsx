@@ -23,6 +23,9 @@ describe('PokemonCard', () => {
   it('shows the front sprite, not the artwork', () => {
     // El sprite es alt="": el nombre ya lo aporta el heading, adentro del mismo link. Sin nombre
     // accesible, el rol pasa a "presentation" y no se puede buscar por getByRole('img').
+    //
+    // Sprite y no ilustracion: esta grilla puede tener cientos de cards con scroll infinito, y la
+    // ilustracion oficial pesa 10-20x mas que el sprite para terminar mostrandose al mismo tamaño.
     const { container } = renderWithProviders(<PokemonCard pokemon={bulbasaur} />);
 
     expect(container.querySelector('img')).toHaveAttribute('src', bulbasaur.sprites.front);
